@@ -85,6 +85,21 @@ a{color:var(--acc)}
 .rite textarea,.rite input{width:100%;padding:.6rem .7rem;border:2px solid var(--pc);border-radius:10px;background:#0D0B1A;font-size:1rem}
 .rite-nav{display:flex;justify-content:space-between;gap:.6rem;margin-top:1rem}
 
+/* 重ねて出す(区切りの一言・濃くする・退場のサイン)。数秒で消える */
+.cue{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:35;max-width:min(30rem,calc(100% - 2rem));background:color-mix(in srgb,var(--pc) 22%,#0D0B1A);border:1px solid var(--pc);border-radius:16px;
+  padding:1.1rem 1.3rem;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5);animation:cuein .6s ease}
+.cue[hidden]{display:none}
+.cue .cm{font-size:.86rem;color:var(--sub);font-style:italic;margin-bottom:.35rem}
+.cue .cl{font-size:1.2rem;line-height:1.7;white-space:pre-wrap}
+.cue .cb{margin-top:.8rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+@keyframes cuein{from{opacity:0;transform:translate(-50%,-44%)}to{opacity:1;transform:translate(-50%,-50%)}}
+.deep-btn{width:4.2rem;height:4.2rem;border-radius:50%;border:2px solid var(--pc);background:var(--card);font-size:2rem;cursor:pointer;box-shadow:0 0 0 0 var(--pc);transition:box-shadow .3s}
+.deep-btn:active{box-shadow:0 0 0 10px color-mix(in srgb,var(--pc) 30%,transparent)}
+.blank{font-size:1.05rem;color:var(--sub);letter-spacing:.2em}
+.count{font-size:3rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--pc)}
+.lines p{margin:.35rem 0;opacity:0;animation:fadein 1.2s ease forwards}
+@keyframes fadein{to{opacity:1}}
+.later{border-left:3px solid var(--gold);padding-left:.6rem}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--rule);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
 nav.tabs button{flex:1;border:none;background:none;padding:.8rem 0;cursor:pointer;color:var(--sub);font-weight:700;font-size:.88rem}
 nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--acc)}
@@ -92,6 +107,14 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 .toast[hidden]{display:none}
 .se-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;font-size:.86rem}.se-btn{min-width:2.6rem;border:1px solid var(--rule);border-radius:999px;background:var(--card);padding:.1rem .7rem;cursor:pointer}.se-btn[aria-pressed="true"]{background:var(--acc);color:#16132A}.se-vol{display:flex;align-items:center;gap:.3rem}.se-vol input{width:8rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.bp-bar{height:6px;border-radius:3px;background:var(--line,#e3dfd6);overflow:hidden;margin:.1rem 0 .5rem}.bp-bar i{display:block;height:100%;background:var(--acc,#6b5bd2)}
+.bp-g{display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0;border-top:1px dashed var(--line,#e3dfd6)}.bp-g:first-of-type{border-top:0}
+.bp-gn{flex:0 0 3.6rem;font-size:.8rem;font-weight:700;padding-top:.1rem}.bp-cs{display:flex;flex-wrap:wrap;gap:.25rem}
+.bp-c{font-size:.74rem;border:1px dashed var(--line,#cfc9bd);border-radius:10px;padding:0 .5rem;color:var(--sub,#8a8378)}.bp-c.on{border-style:solid;border-color:var(--acc,#6b5bd2);color:var(--acc,#6b5bd2);font-weight:700}
+.bp-music{display:inline-block;margin:.2rem 0 .5rem;text-decoration:none}
+.bp-rg{margin:.35rem 0;text-align:left}.bp-rgn{font-size:.72rem;opacity:.7;letter-spacing:.1em;margin-bottom:.15rem}
+.bp-step{display:grid;grid-template-columns:5.5rem 1fr 1.4rem;gap:.4rem;align-items:center;width:100%;text-align:left;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:inherit;border-radius:8px;padding:.45rem .55rem;margin:.2rem 0;font:inherit;font-size:.9rem;cursor:pointer}
+.bp-step .bp-sn{font-size:.78rem;opacity:.75}.bp-step .bp-ck{text-align:right;font-weight:700}.bp-step.done{opacity:.55}.bp-step.done .bp-sv{text-decoration:line-through}
 </style>
 </head>
 <body>
@@ -125,10 +148,17 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
       <div class="f"><label for="c-token">トークン</label><input id="c-token" type="password" autocomplete="off"></div>
       <div class="row"><button type="button" class="btn sm" id="connect">接続して読み込む</button><span class="status" id="conn-status"></span></div>
       <p class="note">今開いている版:<b id="app-version"></b></p></div>
+    <div class="card"><h2>なりきり<small>入り方と、区切り</small></h2><div class="grid2">
+      <div class="f"><label for="s-depth">入るときの儀式</label><select id="s-depth"><option value="short">短い(1分ほど)</option><option value="normal">ふつう(3分ほど)</option><option value="deep">深い(5分ほど)</option></select></div>
+      <div class="f"><label for="s-every">区切りの所作と一言を出す間隔</label><select id="s-every"><option value="0">出さない</option><option value="10">10分ごと</option><option value="20">20分ごと</option><option value="30">30分ごと</option></select></div>
+      <div class="f"><label for="s-inter">幕間の長さ</label><select id="s-inter"><option value="30">30秒</option><option value="60">1分</option><option value="120">2分</option></select></div>
+    </div><button type="button" class="btn sm" id="save-set">保存する</button> <span class="status" id="set-status"></span>
+    <p class="note">区切りの所作と一言は、レンズを開いているあいだだけ出ます。問いかけはせず、その人の一言が数秒出て消えます。</p></div>
     <div class="card"><h2>効果音<small>ほかのアプリと共通</small></h2><p class="note" id="se-anchor">儀式や、掛ける・外すときの音を鳴らします。</p></div>
   </section>
 </div>
 <div class="rite" id="rite" hidden></div>
+<div class="cue" id="cue" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-view="home">いま</button>
@@ -253,11 +283,11 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-14 r1";
+const APP_VERSION = "2026-10-20 r3";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
-const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [] };
+const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [], settings: { depth: "normal", every: 20, inter: 60 } };
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -276,12 +306,38 @@ const FIELDS = [
   ["考え方の手順", [["think.first", "物事を受け取ったとき、最初に何を問うか", "例:「事実は何か。次にできることは何か」", 2], ["think.ignore", "何を気にしないか", "例:人の目、過ぎたこと", 2]]],
   ["感情の反応", [["feel.fail", "失敗したとき", "例:黙って原因を書き、手順を一つ直す", 2], ["feel.praise", "褒められたとき", "例:受け取り、すぐ次に戻る", 2], ["feel.tired", "疲れたとき", "例:質を落とさず量を減らす", 2]]],
   ["内なる声", [["voice.first", "一人称・口調", "例:「私」。短く、言い切る"], ["voice.catch", "口癖", "例:「手順どおりに」"], ["voice.self", "自分にかける言葉", "例:「焦りは手を雑にする」", 2]]],
-  ["体", [["body.posture", "姿勢", "例:肩を下げ、あごを引く"], ["body.walk", "歩き方", "例:一定の速さで、急がない"], ["body.breath", "呼吸", "例:4つ吸って、6つ吐く"]]],
+  ["全身の設計図:周り", [["cue.place", "場所", "例:自分の机"], ["bp.time", "時間・明るさ", "例:夜。机の灯りだけをつける"], ["bp.around", "周りに置くもの・片付けるもの", "例:スマホは引き出しへ。机には問題集とペンだけ", 2]]],
+  ["全身の設計図:五感", [["bp.see", "見る(視線・見るもの・目に入れないもの)", "例:視線は手元の30cm先。時計は見ない", 2], ["cue.sound", "聞く(曲・環境音・静けさ)", "例:雨の音"], ["bp.music", "曲のリンク(入るときに開く)", "例:https://www.youtube.com/watch?v=..."],
+    ["bp.touch", "触れる(服・肌ざわり・温度)", "例:白いシャツ。袖をまくる。少し涼しい部屋", 2], ["cue.tool", "手に持つもの", "例:決まった黒のペン"], ["bp.smell", "嗅ぐ(香り)", "例:淹れたての緑茶"], ["bp.taste", "味わう(飲み物・口に入れるもの)", "例:苦い緑茶を一口"]]],
+  ["全身の設計図:体", [["body.posture", "姿勢", "例:肩を下げ、あごを引く"], ["body.breath", "呼吸", "例:4つ吸って、6つ吐く"], ["bp.face", "表情(口元・眉・目の力)", "例:口を結び、眉の力を抜く。目は静か"], ["body.walk", "歩き方", "例:一定の速さで、急がない"],
+    ["bp.move", "動き(手の置き方・テンポ・癖)", "例:手は机の上に置く。動きはゆっくり、一つずつ", 2], ["cue.posture", "入るときの仕草", "例:手首を一度握る"], ["bp.tension", "力の入り方(どこに入れ、どこを抜くか)", "例:指先にだけ力。肩と顎は抜く"], ["bp.voice", "声(大きさ・速さ・高さ)", "例:低く、ゆっくり、短く"]]],
+  ["全身の設計図:心の中", [["bp.attention", "注意(何に目が行き、何を気にしないか)", "例:次の一手だけを見る。点数は気にしない", 2], ["bp.tempo", "時間の感じ方", "例:急がない。一つ終わるまで時間は止まっている"], ["bp.mood", "気分の基調", "例:静かで、冷えている"]]],
   ["行動の型", [["acts", "朝の動き・勉強への向き合い方・迷ったときの決め方", "例:始める前に手順を3行で書く", 3]]],
   ["決してしないこと", [["never", "この人が絶対にやらないこと", "例:確かめずに次へ進む", 2]]],
   ["呼ぶ場面", [["scenes", "どんなときに、この人になるか", "例:数学の演習、試験本番", 2]]],
+  ["その人の世界", [["world.scene", "情景(一行ずつ、ゆっくり読む)", "例:石造りの部屋。窓の外で波が岩に当たって引いていく。", 5], ["world.monologue", "独白(心の中の声)", "例:今日の灯りは、もう十分に照らした。", 4],
+    ["world.memories", "記憶(その人の人生の一場面。空行で区切っていくつでも)", "例:初めて手術を任された夜、手が震えた。先輩は何も言わず、手順書を開いた。", 6]]],
+  ["濃い行動", [["strong", "薄まったと感じたときにやる、その人らしさの濃い行動(一行に一つ)", "例:手順を声に出して確かめる", 3]]],
+  ["区切り", [["bound.motions", "区切りの所作(一行に一つ)", "例:手を洗う", 2], ["bound.lines", "区切りの一言(一行に一つ。その人の声で)", "例:次の症例だ。手順どおりに。", 3]]],
+  ["退場", [["exit.sign", "退場のサイン(その人の世界での終わりの合図)", "例:夜が明けた"], ["exit.duty", "持ち場の時間(分。来たら退場のサインが出る。空なら出さない)", "例:50"],
+    ["exit.motion", "退場の所作", "例:白衣をかけ、手術室の灯りを消す"], ["exit.line", "退場の一言", "例:今日の手術は、終わりだ"]]],
   ["材料", [["sources", "もとにした人の言葉や振る舞い(あれば)", "例:インタビューの言葉、場面の描写", 4]]]
 ];
+// 全身の設計図の通り道。入るときは、外から内へ(周り → 五感 → 体 → 心の中)の順に整える
+const BP = [
+  ["周り", [["場所", "cue.place"], ["時間・明るさ", "bp.time"], ["周りに置くもの", "bp.around"]]],
+  ["五感", [["見る", "bp.see"], ["聞く", "cue.sound", "bp.music"], ["触れる", "bp.touch"], ["手に持つもの", "cue.tool"], ["嗅ぐ", "bp.smell"], ["味わう", "bp.taste"]]],
+  ["体", [["姿勢", "body.posture"], ["呼吸", "body.breath"], ["表情", "bp.face"], ["歩き方", "body.walk"], ["動き", "bp.move"], ["入るときの仕草", "cue.posture"], ["力の入り方", "bp.tension"], ["声", "bp.voice"]]],
+  ["心の中", [["内なる声", "voice.catch", "voice.first"], ["注意", "bp.attention"], ["時間の感じ方", "bp.tempo"], ["気分の基調", "bp.mood"]]]
+];
+const bpFilled = (p, it) => it.slice(1).some(k => String(get(p, k) || "").trim());
+const bpCount = p => { let n = 0, all = 0; BP.forEach(([, its]) => its.forEach(it => { all++; if (bpFilled(p, it)) n++; })); return { n, all }; };
+function bpHtml(p){
+  const c = bpCount(p), empty = [];
+  const rows = BP.map(([g, its]) => '<div class="bp-g"><span class="bp-gn">' + g + '</span><span class="bp-cs">' + its.map(it => { const on = bpFilled(p, it); if (!on) empty.push(it[0]); return '<span class="bp-c' + (on ? " on" : "") + '">' + esc(it[0]) + "</span>"; }).join("") + "</span></div>").join("");
+  return '<div class="card"><h2>全身の設計図<small>' + c.n + " / " + c.all + "</small></h2>" + '<div class="bp-bar"><i style="width:' + Math.round(c.n / c.all * 100) + '%"></i></div>' + rows +
+    (empty.length ? '<p class="note">まだ決めていない通り道:' + esc(empty.join("・")) + "(直すで書けます)</p>" : '<p class="note">すべての通り道が決まっています。</p>') + "</div>";
+}
 const INTERVIEW = ["朝起きて、最初に何を考える?", "勉強を始める前に、何をする?", "わからない問題に出会ったら、どうする?", "テストで点が悪かったら、どう受け取る?", "人と比べてしまったとき、どう考える?",
   "やる気が出ない日は、どうする?", "時間が足りないとき、何を捨てる?", "褒められたら、何と言う?", "誰かに否定されたら、どう受け取る?", "失敗したとき、最初の一言は?",
   "疲れているとき、何を守り、何をやめる?", "夜、寝る前に何をふりかえる?", "誘惑(スマホ・動画)が来たら、どうする?", "大事な本番の前日、どう過ごす?", "本番の直前、心の中で何を言う?",
@@ -291,7 +347,10 @@ const SITUATIONS = ["模試の結果が思ったより悪かった", "数学の�
   "疲れていて頭が回らない", "先生に厳しいことを言われた", "大事なテストの前日の夜", "試験本番、最初の問題がわからない", "褒められて、気が緩みそう", "やることが多すぎて、何から手をつけるか迷う",
   "同じミスを3回くり返した", "体調が悪い日", "うまくいって、調子に乗りそう", "将来が不安になった"];
 const COLORS = ["#B79CFF", "#7AD6A0", "#F0A35E", "#6EC1F0", "#F07A9C", "#E7C66A", "#9FB4F2", "#C9A0E8"];
-const EMOJIS = ["🎓", "⚔️", "🔬", "🛠️", "🧭", "🦉", "🔥", "🌊", "🗻", "🎯", "🧘", "🕵️"];
+const lines = t => String(t || "").split(/\n/).map(x => x.trim()).filter(Boolean);
+const paras = t => String(t || "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+const pick = a => a.length ? a[Math.floor(Math.random() * a.length)] : "";
+const EMOJIS = ["🌱", "🎓", "⚔️", "🔬", "🛠️", "🧭", "🦉", "🔥", "🌊", "🗻", "🎯", "🧘", "🕵️"];
 
 /* ───────── 状態と保存(ぶつかったら読み直して、同じ変更をかけ直す) ───────── */
 const state = { conn: null, data: clone(DEFAULTS), sha: null, rinen: [], open: null, edit: false, rite: null, drill: null, iv: null };
@@ -313,7 +372,7 @@ async function writeJson(p, obj, sha){
   if (!r.ok) { const e = new Error("保存できませんでした(" + r.status + ")"); e.status = r.status; throw e; }
   const o = await r.json(); return o.content && o.content.sha;
 }
-const norm = d => Object.assign(clone(DEFAULTS), d || {});
+const norm = d => { const x = Object.assign(clone(DEFAULTS), d || {}); x.settings = Object.assign(clone(DEFAULTS.settings), (d && d.settings) || {}); return x; };
 async function commit(mutate){
   if (mutate(state.data) === false) return false;
   lsSet(KEY_LOCAL, state.data); renderAll();
@@ -344,70 +403,129 @@ const rinenOf = id => state.rinen.find(r => r.id === id) || null;
 /* ───────── いま ───────── */
 function renderHome(){
   const d = state.data, a = d.active && P(d.active.id), top = document.getElementById("home-top");
-  document.getElementById("home-sub").innerHTML = a ? esc(a.name) + "になっている" : "素の自分";
+  document.getElementById("home-sub").innerHTML = a ? esc(a.name) : "—";
   if (a) {
-    top.innerHTML = '<div class="active" style="' + pc(a) + '"><div class="now">いま、なっている人物 ・ ' + hm(d.active.at) + "から(" + dur(now() - d.active.at) + ")</div>" +
-      '<div class="nm"><span>' + esc(a.emoji || "🎭") + "</span>" + esc(a.name) + "</div>" + (get(a, "voice.catch") ? '<div class="quote">「' + esc(get(a, "voice.catch")) + "」</div>" : "") +
+    top.innerHTML = '<div class="active" style="' + pc(a) + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div>' +
+      '<div class="nm"><span>' + esc(a.emoji || "🎭") + "</span>" + esc(a.name) + "</div>" + (get(a, "voice.catch") ? '<div class="quote">「' + esc(get(a, "voice.catch")) + "」</div>" : "") + "</div>" +
+      '<button type="button" class="deep-btn" data-deepen title="濃くする">' + esc(a.emoji || "🎭") + "</button></div>" +
       "<dl>" + [["最初に問う", "think.first"], ["行動の型", "acts"], ["決してしない", "never"], ["自分への声", "voice.self"]].filter(([, k]) => get(a, k)).map(([l, k]) => "<dt>" + l + "</dt><dd>" + esc(get(a, k)) + "</dd>").join("") + "</dl>" +
-      (d.active.situation ? '<p class="note">受け取った状況:' + esc(d.active.situation) + (d.active.answer ? "<br>この人として:" + esc(d.active.answer) : "") + "</p>" : "") +
-      '<div class="row" style="margin-top:.5rem"><button type="button" class="btn" data-off>外して、素の自分に戻る</button></div></div>';
+      (d.active.situation ? '<p class="note">' + esc(d.active.situation) + (d.active.answer ? "<br>" + esc(d.active.answer) : "") + "</p>" : "") +
+      '<div class="row" style="margin-top:.6rem;justify-content:space-between"><button type="button" class="btn" data-exit>' + esc(get(a, "exit.motion") ? "退場する" : "退場する") + '</button><button type="button" class="linkbtn" data-back-in>引き戻された</button></div></div>';
   } else {
     const r = state.rinen.length ? state.rinen[new Date(taskDay()).getUTCDate() % state.rinen.length] : null;
-    top.innerHTML = '<div class="bare"><div class="note" style="margin:0">いまは素の自分。土台にある理念</div>' + (r ? "<b>" + esc(r.title) + "</b><p style=\"margin:.2rem 0 0;white-space:pre-wrap\">" + esc(r.text) + "</p>" : '<p class="note">憲政院で理念を分けると、ここに出ます。</p>') + "</div>";
+    top.innerHTML = '<div class="bare"><div class="note" style="margin:0">土台にある理念</div>' + (r ? "<b>" + esc(r.title) + "</b><p style=\"margin:.2rem 0 0;white-space:pre-wrap\">" + esc(r.text) + "</p>" : '<p class="note">憲政院で理念を分けると、ここに出ます。</p>') + "</div>";
   }
-  const ps = d.personas.slice().sort((x, y) => lastUse(y) - lastUse(x));
+  const ps = d.personas.slice().sort((x, y) => (y.core ? 1 : 0) - (x.core ? 1 : 0) || lastUse(y) - lastUse(x));
   document.getElementById("home-list").innerHTML = ps.length ? ps.map(p => pcardHtml(p, "data-become")).join("") : '<p class="note">まだ人物がいません。人物帳で、なりたい人物を作りましょう。</p><button type="button" class="btn sm" data-go-new>人物を作る</button>';
 }
 const lastUse = p => Math.max(0, ...state.data.logs.filter(l => l.personaId === p.id).map(l => l.from));
 function pcardHtml(p, attr){
   const ls = state.data.logs.filter(l => l.personaId === p.id), dp = ls.filter(l => l.depth), avg = dp.length ? dp.reduce((s, l) => s + l.depth, 0) / dp.length : 0;
-  return '<div class="pcard" style="' + pc(p) + '" ' + attr + '="' + esc(p.id) + '"><span class="em">' + esc(p.emoji || "🎭") + '</span><div><div class="pn">' + esc(p.name) + '</div><div class="ps">' + esc(p.scenes || get(p, "profile.age") || "") + "</div></div>" +
-    '<div class="pm">' + ls.length + "回" + (dp.length ? '<br>なりきり <span class="bar"><i style="width:' + Math.round(avg / 5 * 100) + '%"></i></span>' : "") + "</div></div>";
+  return '<div class="pcard" style="' + pc(p) + '" ' + attr + '="' + esc(p.id) + '"><span class="em">' + esc(p.emoji || "🎭") + '</span><div><div class="pn">' + esc(p.name) + (p.core ? ' <span class="note">(本来の自分)</span>' : "") + '</div><div class="ps">' + esc(p.scenes || get(p, "cue.place") || get(p, "profile.age") || "") + "</div></div>" +
+    '<div class="pm">' + ls.length + "回<br><span class=\"note\">設計図 " + bpCount(p).n + "/" + bpCount(p).all + "</span>" + (dp.length ? '<br>なりきり <span class="bar"><i style="width:' + Math.round(avg / 5 * 100) + '%"></i></span>' : "") + "</div></div>";
 }
 
-/* ───────── 憑依の儀式・外すとき ───────── */
-const RITE = ["名を呼ぶ", "姿勢と呼吸", "口癖", "受け取る", "なる"];
-function startRite(id){ state.rite = { kind: "on", id, step: 0, situation: "", answer: "" }; se("open"); renderRite(); }
-function startOff(){ const a = state.data.active; if (!a) return; state.rite = { kind: "off", id: a.id, step: 0, depth: 0, slip: "", seen: "" }; renderRite(); }
-let breathT = null;
+/* ───────── 重ねて出す:区切りの所作と一言/濃くする/退場のサイン(問いかけはしない) ───────── */
+let cueT = null;
+function showCue(p, motion, line, buttons, ms){
+  const el = document.getElementById("cue"); clearTimeout(cueT);
+  el.style.cssText = pc(p); el.hidden = false;
+  el.innerHTML = (motion ? '<div class="cm">(' + esc(motion) + ")</div>" : "") + (line ? '<div class="cl">' + esc(line) + "</div>" : "") + (buttons ? '<div class="cb">' + buttons + "</div>" : "");
+  if (ms) cueT = setTimeout(() => { el.hidden = true; }, ms);
+}
+function hideCue(){ clearTimeout(cueT); const el = document.getElementById("cue"); el.hidden = true; el.innerHTML = ""; }
+function boundCue(){
+  const a = state.data.active && P(state.data.active.id); if (!a) return;
+  const m = pick(lines(get(a, "bound.motions"))), l = pick(lines(get(a, "bound.lines"))) || get(a, "voice.catch");
+  if (!m && !l) return;
+  state.lastCue = now(); showCue(a, m, l, null, 6000); se("pluck");
+}
+function deepen(){
+  const a = state.data.active && P(state.data.active.id); if (!a) return;
+  const bpActs = BP.filter(([g]) => g === "体" || g === "五感").flatMap(([, its]) => its.filter(it => bpFilled(a, it)).map(it => it[0] + ":" + it.slice(1).map(k => String(get(a, k) || "").trim()).filter(Boolean).filter(x => !/^https?:\/\//.test(x)).join(" / ")).filter(x => !/:$/.test(x)));
+  const act = pick(lines(a.strong).concat(bpActs)), mem = pick(paras(get(a, "world.memories"))) || pick(lines(get(a, "world.monologue")));
+  showCue(a, act, mem || get(a, "voice.catch"), null, 9000);
+  commitQuiet(d => { const l = d.logs.find(x => x.id === (d.active || {}).logId); if (l) l.deepens = (l.deepens || 0) + 1; });
+}
+function exitSign(){
+  const a = state.data.active && P(state.data.active.id); if (!a) return;
+  showCue(a, get(a, "exit.sign") || "持ち場の時間が来た", get(a, "exit.line") || "", '<button type="button" class="btn sm" data-exit>退場する</button><button type="button" class="btn ghost sm" data-stay>まだ続ける</button>', 0);
+}
+// 開いているあいだ、区切りの間隔と、退場のサインを見る
+function watch(){
+  const d = state.data, a = d.active && P(d.active.id); if (!a || state.rite || document.hidden) return;
+  const ev = +d.settings.every || 0;
+  if (ev && now() - (state.lastCue || d.active.at) >= ev * 60000) boundCue();
+  const duty = +get(a, "exit.duty") || 0, due = d.active.at + (duty + (d.active.extend || 0)) * 60000;
+  if (duty && now() >= due && !state.signShown) { state.signShown = true; exitSign(); }
+}
+
+/* ───────── 入る儀式(短い・ふつう・深い)・退場と幕間・引き戻されたとき ───────── */
+const STEPS = { short: ["整える", "名", "体", "声", "なる"], normal: ["置く", "整える", "名", "世界", "体", "声", "受け取る", "なる"], deep: ["置く", "整える", "名", "世界", "記憶", "体", "声", "答える", "受け取る", "なる"] };
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-bp-done]"); if (!b || !state.rite) return; const r = state.rite; r.done = r.done || {}; r.done[b.dataset.bpDone] = !r.done[b.dataset.bpDone]; renderRite(); });
+function startRite(id, from){ hideCue(); state.rite = { kind: "on", id, steps: STEPS[state.data.settings.depth] || STEPS.normal, step: 0, situation: "", answer: "", put: "", breaths: 0, ans: {}, from: from || null }; se("open"); renderRite(); }
+function startOff(){ const a = state.data.active; if (!a) return; hideCue(); state.rite = { kind: "off", id: a.id, steps: ["退場", "日誌", "幕間"], step: 0, diary: "" }; renderRite(); }
+function startBack(){ const a = state.data.active; if (!a) return; hideCue(); state.rite = { kind: "back", id: a.id, steps: ["入口", "声", "世界"], step: 0 }; renderRite(); }
+let breathT = null, interT = null;
+function stepBody(r, p, name){
+  if (name === "置く") return '<div class="rite-h">置く</div><div class="rite-text">今、頭の中にあることを書いて、ここに置いていく。</div><textarea id="rt-put" rows="4" placeholder="不安、やり残し、気になっていること">' + esc(r.put) + '</textarea><div class="note">出てきたときに、ここにある</div>';
+  if (name === "整える" || name === "入口") { r.done = r.done || {};
+    const groups = BP.map(([g, its]) => [g, its.filter(it => bpFilled(p, it))]).filter(([, its]) => its.length), music = String(get(p, "bp.music") || "").trim();
+    if (!groups.length) return '<div class="rite-h">整える</div><div class="rite-text">いつもの場所に、身を置く。</div><div class="note">人物帳の「全身の設計図」を埋めると、ここに外から内への順で並びます。</div>';
+    return '<div class="rite-h">整える<span class="note">外から内へ</span></div>' + (music ? '<a class="btn ghost sm bp-music" href="' + esc(music) + '" target="_blank" rel="noopener" data-bp-music>♪ 曲を流す</a>' : "") +
+      groups.map(([g, its]) => '<div class="bp-rg"><div class="bp-rgn">' + g + "</div>" + its.map(it => { const v = it.slice(1).map(k => String(get(p, k) || "").trim()).filter(Boolean).filter(x => !/^https?:\/\//.test(x)).join(" / "), key = it[1];
+        return '<button type="button" class="bp-step' + (r.done[key] ? " done" : "") + '" data-bp-done="' + esc(key) + '"><span class="bp-sn">' + esc(it[0]) + '</span><span class="bp-sv">' + esc(v || "(曲を流す)") + '</span><span class="bp-ck">' + (r.done[key] ? "✓" : "") + "</span></button>"; }).join("") + "</div>").join("") +
+      '<div class="note">一つずつ整えて、押して印を付ける(付けなくても進める)。</div>'; }
+  if (name === "名") return '<div style="font-size:3.2rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (get(p, "profile.look") ? '<div class="note">' + esc(get(p, "profile.look")) + "</div>" : "");
+  if (name === "世界") { const ls = lines(get(p, "world.scene")).concat(r.kind === "back" ? [] : []), show = r.kind === "back" ? ls.slice(0, 1) : ls;
+    return '<div class="rite-h">' + esc(p.name) + 'の世界</div><div class="rite-text lines">' + (show.length ? show.map((t, i) => '<p style="animation-delay:' + (i * 1.8) + 's">' + esc(t) + "</p>").join("") : "<p>" + esc(get(p, "profile.life") || "") + "</p>") + "</div>"; }
+  if (name === "記憶") { const m = r.memory || (r.memory = pick(paras(get(p, "world.memories"))));
+    return '<div class="rite-h">記憶</div><div class="rite-text">' + esc(m || get(p, "profile.life") || "") + "</div>"; }
+  if (name === "体") return '<div class="rite-h">体</div><div class="rite-text">' + esc(get(p, "body.posture") || "背筋を伸ばす") + '</div><div class="breath" id="breath">吸う</div><div class="note">' + esc(get(p, "body.breath") || "4つ吸って、4つ吐く") + '</div><div class="note" id="br-n">' + r.breaths + " / 6</div>";
+  if (name === "声") return '<div class="rite-h">声</div><div class="rite-big">「' + esc(get(p, "voice.catch") || "……") + '」</div>' + (get(p, "world.monologue") ? '<div class="rite-text">' + esc(get(p, "world.monologue")) + "</div>" : "") + '<div class="note">' + esc(get(p, "voice.first") || "") + "</div>";
+  if (name === "答える") { const qs = r.qs || (r.qs = pickQs(p)); return '<div class="rite-h">' + esc(p.name) + "として</div>" + qs.map(i => '<div class="rite-text" style="font-size:1rem">' + esc(INTERVIEW[i]) + '</div><textarea data-rt-q="' + i + '" rows="2">' + esc(r.ans[i] != null ? r.ans[i] : ((p.interview || {})[i] || "")) + "</textarea>").join(""); }
+  if (name === "受け取る") return '<div class="rite-h">受け取る</div><div class="rite-text">いま、どんな状況?</div><input id="rt-sit" value="' + esc(r.situation) + '">' + (get(p, "think.first") ? '<div class="note">' + esc(get(p, "think.first")) + "</div>" : "") + '<textarea id="rt-ans" rows="3" placeholder="' + esc(p.name) + 'として">' + esc(r.answer) + "</textarea>";
+  if (name === "なる") return '<div style="font-size:3.2rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (p.never ? '<div class="note">' + esc(p.never) + "</div>" : "");
+  if (name === "退場") return '<div style="font-size:3rem">' + esc(p.emoji || "🎭") + '</div>' + (get(p, "exit.motion") ? '<div class="rite-text" style="font-style:italic">(' + esc(get(p, "exit.motion")) + ")</div>" : "") + '<div class="rite-big" style="font-size:1.6rem">' + esc(get(p, "exit.line") || "今日は、ここまで") + "</div>";
+  if (name === "日誌") return '<div class="rite-h">' + esc(p.name) + 'の日誌</div><textarea id="rt-diary" rows="3" placeholder="' + esc(p.name) + 'の声で、一行(書かなくてもいい)">' + esc(r.diary) + "</textarea>";
+  if (name === "幕間") { const left = Math.max(0, Math.ceil((r.interEnd - now()) / 1000));
+    if (left > 0) return '<div class="blank">立つ ・ 顔を洗う ・ 水を飲む ・ 場所を移る</div><div class="count" id="int-n">' + left + "</div>";
+    const ps = state.data.personas.filter(x => x.id !== r.id).sort((x, y) => (y.core ? 1 : 0) - (x.core ? 1 : 0) || lastUse(y) - lastUse(x));
+    return '<div class="blank">次は</div>' + ps.map(x => pcardHtml(x, "data-rt-next-p")).join("") + '<button type="button" class="btn ghost" data-rt-end>ここで終える</button>' + (r.put ? '<p class="note">置いていったもの:' + esc(r.put) + "</p>" : ""); }
+  return "";
+}
+function pickQs(p){ const iv = p.interview || {}, idx = INTERVIEW.map((q, i) => i), un = idx.filter(i => !String(iv[i] || "").trim()), pool = (un.length >= 3 ? un : idx).slice();
+  const out = []; while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); return out; }
 function renderRite(){
-  const box = document.getElementById("rite"), r = state.rite; clearInterval(breathT);
+  const box = document.getElementById("rite"), r = state.rite; clearInterval(breathT); clearInterval(interT);
   if (!r) { box.hidden = true; box.innerHTML = ""; return; }
   const p = P(r.id); if (!p) { state.rite = null; return renderRite(); }
+  const name = r.steps[r.step];
+  if (name === "幕間" && !r.interEnd) r.interEnd = now() + (+state.data.settings.inter || 60) * 1000;
   box.style.cssText = pc(p); box.hidden = false;
-  let body = "", nav = "";
-  if (r.kind === "on") {
-    if (r.step === 0) body = '<div class="rite-h">名を呼ぶ</div><div style="font-size:3rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">今から、' + esc(p.name) + "になる</div>" + (get(p, "profile.life") ? '<div class="rite-text">' + esc(get(p, "profile.life")) + "</div>" : "") + (get(p, "profile.look") ? '<div class="note">' + esc(get(p, "profile.look")) + "</div>" : "");
-    if (r.step === 1) body = '<div class="rite-h">姿勢と呼吸</div><div class="rite-text">' + esc(get(p, "body.posture") || "背筋を伸ばす") + "</div>" + '<div class="breath" id="breath">吸う</div><div class="note">' + esc(get(p, "body.breath") || "4つ吸って、6つ吐く") + "</div>";
-    if (r.step === 2) body = '<div class="rite-h">口癖</div><div class="rite-big">「' + esc(get(p, "voice.catch") || "……") + '」</div><div class="rite-text">' + esc(get(p, "voice.first") || "") + '</div><div class="note">心の中で、この人の声で言う</div>';
-    if (r.step === 3) body = '<div class="rite-h">受け取る</div><div class="rite-text">いま、どんな状況?</div><input id="rt-sit" placeholder="例:模試の結果が悪かった" value="' + esc(r.situation) + '">' +
-      '<div class="rite-text" style="font-size:1rem">' + esc(p.name) + "なら、これをどう受け取る?(この人の声で)</div>" + (get(p, "think.first") ? '<div class="note">この人が最初に問うこと:' + esc(get(p, "think.first")) + "</div>" : "") +
-      '<textarea id="rt-ans" rows="3" placeholder="この人として書く">' + esc(r.answer) + "</textarea>";
-    if (r.step === 4) body = '<div class="rite-h">なる</div><div style="font-size:3rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">' + esc(p.name) + '</div><div class="rite-text">ここから先は、この人の頭で考える。</div>' + (p.never ? '<div class="note">決してしないこと:' + esc(p.never) + "</div>" : "");
-    nav = (r.step > 0 ? '<button type="button" class="btn ghost" data-rt-back>もどる</button>' : "<span></span>") + (r.step < 4 ? '<button type="button" class="btn" data-rt-next>次へ</button>' : '<button type="button" class="btn big" data-rt-on>なる</button>');
-  } else {
-    if (r.step === 0) body = '<div class="rite-h">ふりかえる</div><div class="rite-big">' + esc(p.name) + 'として、どれだけなりきれた?</div><div class="rate">' + [1, 2, 3, 4, 5].map(n => '<button type="button" data-depth="' + n + '" aria-pressed="' + (r.depth === n) + '">' + n + "</button>").join("") + '</div><div class="note">5がいちばん深い</div>' +
-      '<div class="rite-text" style="font-size:1rem">どこで、素の自分に戻ってしまった?</div><input id="rt-slip" value="' + esc(r.slip) + '" placeholder="例:動画を見たくなったとき">' +
-      '<div class="rite-text" style="font-size:1rem">この人として、何が見えて、何をした?</div><textarea id="rt-seen" rows="3">' + esc(r.seen) + "</textarea>";
-    if (r.step === 1) { const root = (p.roots || []).map(rinenOf).filter(Boolean)[0] || state.rinen[0];
-      body = '<div class="rite-h">素の自分に戻る</div><div class="rite-text">' + esc(p.name) + "を外す。<br>どの人物でもない自分の芯は、ここにある。</div>" + (root ? "<b>" + esc(root.title) + '</b><div class="rite-text">' + esc(root.text) + "</div>" : ""); }
-    nav = (r.step > 0 ? '<button type="button" class="btn ghost" data-rt-back>もどる</button>' : "<span></span>") + (r.step < 1 ? '<button type="button" class="btn" data-rt-next>次へ</button>' : '<button type="button" class="btn big" data-rt-off>戻った</button>');
-  }
-  const steps = r.kind === "on" ? RITE : ["ふりかえる", "素に戻る"];
-  box.innerHTML = '<div class="rite-top"><span>' + (r.step + 1) + " / " + steps.length + "　" + steps[r.step] + '</span><div class="dots">' + steps.map((_, i) => '<span class="' + (i <= r.step ? "on" : "") + '"></span>').join("") + '</div><button type="button" class="linkbtn" data-rt-x>やめる</button></div>' +
-    '<div class="rite-body">' + body + '</div><div class="rite-nav">' + nav + "</div>";
+  const last = r.step === r.steps.length - 1, inter = name === "幕間";
+  const next = r.kind === "on" && last ? '<button type="button" class="btn big" data-rt-on>なる</button>' : r.kind === "back" && last ? '<button type="button" class="btn big" data-rt-backdone>戻る</button>'
+    : inter ? "<span></span>" : '<button type="button" class="btn" data-rt-next>' + (name === "体" && r.breaths < 6 ? "次へ(呼吸を数え終えると進みやすい)" : "次へ") + "</button>";
+  box.innerHTML = '<div class="rite-top"><span>' + (inter ? "幕間" : (r.step + 1) + " / " + r.steps.length) + '</span><div class="dots">' + r.steps.map((_, i) => '<span class="' + (i <= r.step ? "on" : "") + '"></span>').join("") + "</div>" +
+    (r.kind === "off" && r.step > 0 ? "<span></span>" : '<button type="button" class="linkbtn" data-rt-x>やめる</button>') + "</div>" +
+    '<div class="rite-body">' + stepBody(r, p, name) + '</div><div class="rite-nav">' + (r.step > 0 && !inter && r.kind !== "off" ? '<button type="button" class="btn ghost" data-rt-back>もどる</button>' : "<span></span>") + next + "</div>";
   const b = document.getElementById("breath");
-  if (b) { let inn = true; const tick = () => { b.className = "breath " + (inn ? "in" : "out"); b.textContent = inn ? "吸う" : "吐く"; inn = !inn; }; tick(); breathT = setInterval(tick, 4000); }
+  if (b) { let inn = true; const tick = () => { b.className = "breath " + (inn ? "in" : "out"); b.textContent = inn ? "吸う" : "吐く"; if (!inn) { r.breaths++; const n = document.getElementById("br-n"); if (n) n.textContent = Math.min(6, r.breaths) + " / 6"; } inn = !inn; }; tick(); breathT = setInterval(tick, 4000); }
+  if (inter && r.interEnd > now()) interT = setInterval(() => { const n = document.getElementById("int-n"), left = Math.ceil((r.interEnd - now()) / 1000); if (left <= 0) { clearInterval(interT); renderRite(); se("tap"); } else if (n) n.textContent = left; }, 500);
 }
 function readRite(){ const r = state.rite; if (!r) return; const v = id => { const el = document.getElementById(id); return el ? el.value : null; };
-  if (v("rt-sit") != null) r.situation = v("rt-sit"); if (v("rt-ans") != null) r.answer = v("rt-ans"); if (v("rt-slip") != null) r.slip = v("rt-slip"); if (v("rt-seen") != null) r.seen = v("rt-seen"); }
+  if (v("rt-sit") != null) r.situation = v("rt-sit"); if (v("rt-ans") != null) r.answer = v("rt-ans"); if (v("rt-put") != null) r.put = v("rt-put"); if (v("rt-diary") != null) r.diary = v("rt-diary");
+  document.querySelectorAll("[data-rt-q]").forEach(t => { r.ans[t.dataset.rtQ] = t.value; }); }
+// 記録だけを、画面を描き直さずに残す(濃くするボタンなど、入りきっている最中のもの)
+async function commitQuiet(mutate){ if (mutate(state.data) === false) return; lsSet(KEY_LOCAL, state.data); if (!state.conn) return;
+  try { state.sha = await writeJson(DATA, state.data, state.sha); } catch (err) { try { const f = await readJson(DATA); state.data = norm(f.data); state.sha = f.sha; mutate(state.data); state.sha = await writeJson(DATA, state.data, state.sha); } catch (e) {} } }
 
 /* ───────── 人物帳 ───────── */
 function renderBook(){
   const d = state.data, box = document.getElementById("book-main");
   document.getElementById("book-sub").textContent = d.personas.length + "人";
   const p = state.open && P(state.open);
-  if (!p) { box.innerHTML = '<div class="row" style="margin-bottom:.6rem"><button type="button" class="btn" data-new>人物を作る</button></div>' + d.personas.map(x => pcardHtml(x, "data-openp")).join("") +
+  if (!p) { box.innerHTML = '<div class="row" style="margin-bottom:.6rem"><button type="button" class="btn" data-new>人物を作る</button>' + (d.personas.some(x => x.core) ? "" : '<button type="button" class="btn ghost" data-core>本来の自分を作る</button>') + "</div>" + d.personas.map(x => pcardHtml(x, "data-openp")).join("") +
     (d.personas.length ? "" : '<p class="note">なりたい人物を、細かく描くほど、なりきれます。ゼロから作っても、実在の人や物語の人物をもとにしてもかまいません。</p>'); return; }
   if (state.edit) { box.innerHTML = editHtml(p); return; }
   const ivN = Object.values(p.interview || {}).filter(x => String(x || "").trim()).length, drills = d.drills.filter(x => x.personaId === p.id);
@@ -415,6 +533,7 @@ function renderBook(){
     '<div class="active" style="' + pc(p) + '"><div class="nm"><span>' + esc(p.emoji || "🎭") + "</span>" + esc(p.name) + "</div>" + (get(p, "voice.catch") ? '<div class="quote">「' + esc(get(p, "voice.catch")) + "」</div>" : "") +
     ((p.roots || []).length ? '<div class="chips">' + p.roots.map(id => { const r = rinenOf(id); return "<span>" + esc(r ? r.title : "(見つからない理念)") + "</span>"; }).join("") + "</div>" : '<p class="note">根っこの理念がまだ結びついていません(直すで選べます)</p>') + "</div>" +
     '<div class="card sec">' + FIELDS.map(([sec, fs]) => { const vs = fs.filter(([k]) => String(get(p, k) || "").trim()); return vs.length ? "<h3>" + sec + "</h3>" + vs.map(([k, l]) => '<div class="note" style="margin:.2rem 0 0">' + esc(l) + '</div><div class="val">' + esc(get(p, k)) + "</div>").join("") : ""; }).join("") + "</div>" +
+    bpHtml(p) +
     '<div class="card"><h2>面接<small>' + ivN + " / " + INTERVIEW.length + "問</small></h2>" + interviewHtml(p) + "</div>" +
     '<div class="card"><h2>問答集<small>' + drills.length + "件</small></h2>" + (drills.slice(-5).reverse().map(x => '<div class="qa"><div class="q">' + md(x.date) + "・" + esc(x.situation) + (x.fit ? "・この人らしさ " + x.fit + "/5" : "") + '</div><div class="a">' + esc(x.answer) + "</div></div>").join("") || '<p class="note">問答のタブで、この人として答える練習をすると、ここにたまります。</p>') + "</div>" +
     '<div class="row"><button type="button" class="linkbtn del" data-delp="' + esc(p.id) + '">この人物を消す</button></div>';
@@ -460,34 +579,59 @@ function renderLog(){
   const d = state.data, box = document.getElementById("log-main");
   const stats = d.personas.map(p => { const ls = d.logs.filter(l => l.personaId === p.id), dp = ls.filter(l => l.depth);
     return { p, n: ls.length, avg: dp.length ? dp.reduce((s, l) => s + l.depth, 0) / dp.length : null, time: ls.reduce((s, l) => s + Math.max(0, (l.to || 0) - l.from), 0) }; }).sort((a, b) => b.n - a.n);
-  box.innerHTML = '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + esc(s.p.emoji || "🎭") + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + "</div></div>" +
+  const later = d.logs.filter(l => l.to && !l.depth && !l.reviewed).slice(-10).reverse(), lp = state.laterPick || {};
+  box.innerHTML = (later.length ? '<div class="card later"><h2>あとでふりかえる<small>' + later.length + "件</small></h2><p class=\"note\">なりきっているあいだと退場のときは聞かずに、ここでまとめてふりかえります。</p>" +
+      later.map(l => { const p = P(l.personaId); return '<div class="qa" style="' + pc(p) + '"><div class="q">' + md(taskDay(l.from)) + " " + hm(l.from) + "〜" + hm(l.to) + "・" + esc(p ? p.name : "") + (l.slips ? "・引き戻された " + l.slips + "回" : "") + (l.deepens ? "・濃くした " + l.deepens + "回" : "") + "</div>" +
+        (l.diary ? '<div class="a">日誌:' + esc(l.diary) + "</div>" : "") + '<div class="note">どれだけなりきれた?</div><div class="rate">' + [1, 2, 3, 4, 5].map(n => '<button type="button" data-later-depth="' + esc(l.id) + ":" + n + '" aria-pressed="' + (lp[l.id] === n) + '">' + n + "</button>").join("") + "</div>" +
+        '<div class="f"><input id="lt-slip-' + esc(l.id) + '" placeholder="どこで素に戻った?(なくてもいい)"></div><button type="button" class="btn sm" data-later-save="' + esc(l.id) + '">残す</button></div>'; }).join("") + "</div>" : "") +
+    '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + esc(s.p.emoji || "🎭") + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + "</div></div>" +
       '<div class="pm">' + (s.avg != null ? "なりきり " + (Math.round(s.avg * 10) / 10) + '/5<br><span class="bar"><i style="width:' + Math.round(s.avg / 5 * 100) + '%"></i></span>' : "まだ") + "</div></div>").join("") || '<p class="note">まだありません。</p>') + "</div>" +
     '<div class="card"><h2>これまで</h2><ul class="log">' + (d.logs.slice(-30).reverse().map(l => { const p = P(l.personaId);
       return '<li><span class="t">' + md(taskDay(l.from)) + " " + hm(l.from) + (l.to ? "〜" + hm(l.to) : "") + "</span> " + esc(p ? (p.emoji || "") + p.name : "(消した人物)") + (l.depth ? "・なりきり " + l.depth + "/5" : "") +
-        (l.situation ? '<br><small>状況:' + esc(l.situation) + "</small>" : "") + (l.slip ? '<br><small>素に戻ったところ:' + esc(l.slip) + "</small>" : "") + (l.seen ? '<br><small>見えたこと・やったこと:' + esc(l.seen) + "</small>" : "") + "</li>"; }).join("") || '<li class="note">まだありません。</li>') + "</ul></div>";
+        (l.situation ? '<br><small>状況:' + esc(l.situation) + "</small>" : "") + (l.diary ? '<br><small>日誌:' + esc(l.diary) + "</small>" : "") + (l.slip ? '<br><small>素に戻ったところ:' + esc(l.slip) + "</small>" : "") + (l.seen ? '<br><small>見えたこと・やったこと:' + esc(l.seen) + "</small>" : "") + "</li>"; }).join("") || '<li class="note">まだありません。</li>') + "</ul></div>";
 }
-function renderAll(){ renderHome(); renderBook(); renderDrill(); renderLog(); }
+function renderSet(){ const st = state.data.settings, set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = String(v); }; set("s-depth", st.depth); set("s-every", st.every); set("s-inter", st.inter); }
+function renderAll(){ renderHome(); renderBook(); renderDrill(); renderLog(); renderSet(); }
 
 /* ───────── 操作(入力欄の値は、押した瞬間に読み取ってから変更を渡す) ───────── */
-function showView(name){ document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + name); document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", String(x.dataset.view === name))); window.scrollTo(0, 0); }
+function showView(name){ renderAll(); document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + name); document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", String(x.dataset.view === name))); window.scrollTo(0, 0); }
 function bind(){
   document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
   document.body.addEventListener("click", async e => {
     const q = s => e.target.closest(s); let b;
     // 儀式
-    if ((b = q("[data-become]"))) return startRite(b.dataset.become);
-    if (q("[data-off]")) return startOff();
+    if ((b = q("[data-become]"))) { const id = b.dataset.become, a = state.data.active;
+      if (a && a.id === id) { showView("home"); return; }
+      if (a) { startOff(); state.rite.nextId = id; renderRite(); return; }       // 今の人物は退場し、幕間を通ってから入る
+      return startRite(id); }
+    if (q("[data-exit]")) { hideCue(); return startOff(); }
+    if (q("[data-stay]")) { hideCue(); state.signShown = false; await commitQuiet(d => { if (d.active) d.active.extend = (d.active.extend || 0) + 15; }); return; }
+    if (q("[data-deepen]")) return deepen();
+    if (q("[data-back-in]")) return startBack();
     if (q("[data-rt-x]")) { state.rite = null; renderRite(); return; }
-    if (q("[data-rt-next]")) { readRite(); state.rite.step++; se("tap"); renderRite(); return; }
     if (q("[data-rt-back]")) { readRite(); state.rite.step--; renderRite(); return; }
-    if ((b = q("[data-depth]"))) { readRite(); state.rite.depth = +b.dataset.depth; renderRite(); return; }
-    if (q("[data-rt-on]")) { readRite(); const r = state.rite, t = now(), prev = state.data.active, lid = "l" + uid();
+    if (q("[data-rt-next]")) { readRite(); const r = state.rite, name = r.steps[r.step];
+      if (r.kind === "off" && name === "日誌") { const t = now(), diary = r.diary.trim();
+        await commitQuiet(d => { if (!d.active) return false; const l = d.logs.find(x => x.id === d.active.logId); if (l) Object.assign(l, { to: t, diary }); r.put = (l && l.put) || ""; d.active = null; }); renderHome(); }
+      r.step++; se("tap"); renderRite(); return; }
+    if ((b = q("[data-rt-next-p]"))) return startRite(b.dataset.rtNextP);
+    if (q("[data-rt-end]")) { state.rite = null; renderRite(); renderAll(); return; }
+    if (q("[data-rt-on]")) { readRite(); const r = state.rite, t = now(), lid = "l" + uid(), ans = Object.assign({}, r.ans);
       await commit(d => { if (d.active) { const l = d.logs.find(x => x.id === d.active.logId); if (l && !l.to) l.to = t; }
-        d.logs.push({ id: lid, personaId: r.id, from: t, situation: r.situation.trim(), answer: r.answer.trim() }); d.active = { id: r.id, at: t, situation: r.situation.trim(), answer: r.answer.trim(), logId: lid }; });
-      state.rite = null; renderRite(); se("fanfare"); toast(P(r.id).name + "になりました" + (prev ? "(前の人物は外しました)" : "")); return; }
-    if (q("[data-rt-off]")) { readRite(); const r = state.rite, t = now();
-      await commit(d => { if (!d.active) return false; const l = d.logs.find(x => x.id === d.active.logId); if (l) Object.assign(l, { to: t, depth: r.depth || null, slip: r.slip.trim(), seen: r.seen.trim() }); d.active = null; });
-      state.rite = null; renderRite(); se("save"); toast("素の自分に戻りました"); return; }
+        d.logs.push({ id: lid, personaId: r.id, from: t, situation: r.situation.trim(), answer: r.answer.trim(), put: r.put.trim() });
+        d.active = { id: r.id, at: t, situation: r.situation.trim(), answer: r.answer.trim(), logId: lid };
+        const p = d.personas.find(x => x.id === r.id); if (p) { p.interview = p.interview || {}; Object.keys(ans).forEach(k => { if (String(ans[k] || "").trim()) p.interview[k] = ans[k].trim(); }); } });
+      state.rite = null; state.lastCue = t; state.signShown = false; renderRite(); se("fanfare"); return; }
+    if (q("[data-rt-backdone]")) { state.rite = null; renderRite(); await commitQuiet(d => { const l = d.logs.find(x => x.id === (d.active || {}).logId); if (l) l.slips = (l.slips || 0) + 1; }); state.lastCue = now(); return; }
+    // あとからのふりかえり
+    if ((b = q("[data-later-depth]"))) { const [id, n] = b.dataset.laterDepth.split(":"); state.laterPick = state.laterPick || {}; state.laterPick[id] = +n; renderLog(); return; }
+    if ((b = q("[data-later-save]"))) { const id = b.dataset.laterSave, dep = (state.laterPick || {})[id], slip = ((document.getElementById("lt-slip-" + id) || {}).value || "").trim();
+      if (!dep) { toast("なりきれた度合いを選んでください"); return; }
+      await commit(d => { const l = d.logs.find(x => x.id === id); if (l) { l.depth = dep; l.slip = slip; l.reviewed = taskDay(); } }); return; }
+    if (q("[data-core]")) { const id = "p" + uid();
+      await commit(d => { if (d.personas.some(x => x.core)) return false; d.personas.push({ id, core: true, name: "本来の自分", emoji: "🌱", color: "#7AD6A0", roots: state.rinen.map(r => r.id), interview: {}, created: taskDay(),
+        voice: { catch: "" }, profile: { life: "どの人物でもない、憲法の理念に立つ自分" } }); });
+      state.open = id; state.edit = true; showView("book"); renderBook(); return; }
     // 人物帳
     if (q("[data-new]") || q("[data-go-new]")) { const id = "p" + uid(), n = state.data.personas.length;
       await commit(d => { d.personas.push({ id, name: "新しい人物", emoji: EMOJIS[n % EMOJIS.length], color: COLORS[n % COLORS.length], roots: [], interview: {}, created: taskDay() }); });
@@ -519,6 +663,8 @@ function bind(){
       state.drill = { personaId: dr.personaId, situation: pickSituation(), fit: 0 }; renderDrill(); se("save"); toast("問答集に残しました"); return; }
   });
   document.body.addEventListener("change", e => { if (e.target.id === "dr-p") { state.drill.personaId = e.target.value; renderDrill(); } });
+  document.getElementById("save-set").addEventListener("click", async () => { const v = id => document.getElementById(id).value;
+    const st = { depth: v("s-depth"), every: +v("s-every"), inter: +v("s-inter") }; await commit(d => { d.settings = Object.assign({}, d.settings, st); }); document.getElementById("set-status").textContent = "保存しました"; });
   document.getElementById("connect").addEventListener("click", async () => {
     const v = id => document.getElementById(id).value.trim(), c = { owner: v("c-owner"), repo: v("c-repo") || "notion-daily", branch: v("c-branch") || "main", token: v("c-token") };
     if (!c.owner || !c.token) { const st = document.getElementById("conn-status"); st.classList.add("err"); st.textContent = "ユーザー名とトークンを入れてください。"; return; }
@@ -533,11 +679,13 @@ function boot(){
   document.getElementById("c-branch").value = c ? c.branch : "main"; document.getElementById("c-token").value = c ? c.token : "";
   document.getElementById("app-version").textContent = APP_VERSION; document.getElementById("ver").textContent = APP_VERSION;
   bind(); renderAll();
-  try { SE.init([["[data-rt-on], [data-rt-off], [data-become], [data-rt-next], [data-dr-save], [data-edit-save]", null], ["[data-depth], [data-fit]", "pluck"], ["[data-delp]", "remove"], ["nav.tabs button", "tab"]]); SE.mount(document.getElementById("se-anchor")); } catch (e) {}
+  try { SE.init([["[data-rt-on], [data-become], [data-rt-next], [data-dr-save], [data-edit-save], [data-rt-backdone]", null], ["[data-later-depth], [data-fit]", "pluck"], ["[data-delp]", "remove"], ["nav.tabs button", "tab"]]); SE.mount(document.getElementById("se-anchor")); } catch (e) {}
   if (c && c.token) { state.conn = c; loadAll(); }
-  setInterval(() => { if (!document.getElementById("view-home").hidden && state.data.active) renderHome(); }, 60000);
+  setInterval(watch, 15000);
+  // 幕間のあとに入る人物が決まっていれば、数え終わったらそのまま入る
+  setInterval(() => { const r = state.rite; if (r && r.kind === "off" && r.steps[r.step] === "幕間" && r.nextId && r.interEnd && now() >= r.interEnd) startRite(r.nextId); }, 500);
 }
-window.__lens = { state, INTERVIEW, SITUATIONS };
+window.__lens = { state, INTERVIEW, SITUATIONS, watch, boundCue };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
