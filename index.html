@@ -107,6 +107,26 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 .toast[hidden]{display:none}
 .se-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;font-size:.86rem}.se-btn{min-width:2.6rem;border:1px solid var(--rule);border-radius:999px;background:var(--card);padding:.1rem .7rem;cursor:pointer}.se-btn[aria-pressed="true"]{background:var(--acc);color:#16132A}.se-vol{display:flex;align-items:center;gap:.3rem}.se-vol input{width:8rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.pt-chip{border:1px solid var(--acc);background:none;color:var(--acc);border-radius:16px;padding:.2rem .75rem;margin:.15rem .25rem .15rem 0;font:inherit;font-size:.86rem;cursor:pointer}
+.pt-q{margin:.3rem 0 .2rem;font-weight:700;text-align:left}
+.pt-sp{width:100%;height:28px;display:block}.pt-sp.big{height:40px}.pt-sp polyline{fill:none;stroke:var(--acc);stroke-width:2}.pt-sp .pt-zero{stroke:var(--rule);stroke-dasharray:3 3}.pt-sp0{color:var(--rule);text-align:center}
+.pt-pct{text-align:right;font-weight:700;font-size:1.2rem}.pt-pct small{font-size:.65em;color:var(--sub);font-weight:400}
+.pt-cnt{font-size:.7rem;color:var(--sub);text-align:right;margin:-.15rem 0 .1rem}
+.pt-deg{margin:.8rem 0 .2rem}.pt-deg span{font-size:.85rem;color:var(--sub)}.pt-deg b{color:var(--ink);font-size:1.15rem}.pt-deg small{display:block;font-size:.7rem;color:var(--sub);margin-top:.15rem}
+.pt-ev.good span{color:var(--gold)}.pt-ev.imp.done{opacity:.6}.pt-ev.imp .linkbtn{font-size:.74rem;margin-left:.3rem}
+.pt-n{display:inline-block;margin-left:.5rem;font-size:.95rem}.pt-n i{display:block;font-style:normal;font-weight:400;font-size:.62rem;color:var(--sub)}
+.pt-row{display:grid;grid-template-columns:minmax(0,1fr) 5rem 3.2rem;gap:.5rem;align-items:center;width:100%;text-align:left;border:none;border-top:1px dashed var(--rule);background:none;color:inherit;font:inherit;padding:.55rem 0 .25rem;cursor:pointer}
+.pt-row:first-of-type{border-top:0}.pt-rn b{display:block}.pt-rn small{display:block;color:var(--sub);font-size:.76rem;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.pt-sp{width:100%;height:28px}.pt-sp polyline{fill:none;stroke:var(--acc);stroke-width:1.8}.pt-sp .pt-zero{stroke:var(--rule);stroke-dasharray:3 3}
+.pt-ra{text-align:right;font-weight:700}.pt-ra small{display:block;font-weight:400;font-size:.68rem;color:var(--sub)}
+.pt-ops{display:flex;gap:.8rem;justify-content:flex-end;margin-bottom:.2rem}.pt-ops .linkbtn{font-size:.76rem}
+.pt-focus{text-align:center}.pt-name{font-size:.85rem;color:var(--sub);letter-spacing:.12em}
+.pt-before{margin:.6rem 0 0;color:var(--sub);text-decoration:line-through;text-decoration-color:rgba(240,122,122,.6)}
+.pt-arrow{color:var(--acc);margin:.2rem 0}.pt-after{font-size:1.25rem;font-weight:700;line-height:1.5}
+.pt-word{margin:.7rem 0 .2rem;color:var(--gold);font-size:1.05rem;letter-spacing:.08em}
+.pt-evh{margin:1rem 0 .3rem;font-weight:700;font-size:.9rem;text-align:left}.pt-evh small{margin-left:.5rem;font-weight:400;color:var(--sub);font-size:.74rem}
+.pt-ev{text-align:left;font-size:.86rem;padding:.25rem 0;border-top:1px dashed var(--rule)}.pt-ev span{color:var(--sub);font-size:.74rem;margin-right:.5rem}
+.pt-feel{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center}.pt-feel button{border:1px solid var(--rule);background:var(--card);color:var(--ink);border-radius:16px;padding:.25rem .7rem;font:inherit;font-size:.85rem;cursor:pointer}
 .bp-bar{height:6px;border-radius:3px;background:var(--line,#e3dfd6);overflow:hidden;margin:.1rem 0 .5rem}.bp-bar i{display:block;height:100%;background:var(--acc,#6b5bd2)}
 .bp-g{display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0;border-top:1px dashed var(--line,#e3dfd6)}.bp-g:first-of-type{border-top:0}
 .bp-gn{flex:0 0 3.6rem;font-size:.8rem;font-weight:700;padding-top:.1rem}.bp-cs{display:flex;flex-wrap:wrap;gap:.25rem}
@@ -123,10 +143,15 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
     <header class="head"><h1>レンズ</h1><div class="sub" id="home-sub">—</div></header>
     <div id="home-top"></div>
     <div class="card"><h2>人物を選んで、なる<small>押すと、憑依の儀式へ</small></h2><div id="home-list"></div></div>
+    <div id="home-paint"></div>
   </section>
   <section class="view" id="view-book" hidden>
     <header class="head"><h1>人物帳</h1><div class="sub" id="book-sub">—</div></header>
     <div id="book-main"></div>
+  </section>
+  <section class="view" id="view-paint" hidden>
+    <header class="head"><h1>塗り替え</h1><div class="sub">ものの見え方を、プラスに塗り替える</div></header>
+    <div id="paint-main"></div>
   </section>
   <section class="view" id="view-drill" hidden>
     <header class="head"><h1>問答</h1><div class="sub">なりきる力を鍛える</div></header>
@@ -163,6 +188,7 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 <nav class="tabs" role="tablist">
   <button role="tab" aria-selected="true" data-view="home">いま</button>
   <button role="tab" aria-selected="false" data-view="book">人物帳</button>
+  <button role="tab" aria-selected="false" data-view="paint">塗り替え</button>
   <button role="tab" aria-selected="false" data-view="drill">問答</button>
   <button role="tab" aria-selected="false" data-view="log">記録</button>
   <button role="tab" aria-selected="false" data-view="set">設定</button>
@@ -283,11 +309,11 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-20 r3";
+const APP_VERSION = "2026-10-21 r6";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
-const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [], settings: { depth: "normal", every: 20, inter: 60 } };
+const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [], reframes: [], settings: { depth: "normal", every: 20, inter: 60 } };
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -591,7 +617,100 @@ function renderLog(){
         (l.situation ? '<br><small>状況:' + esc(l.situation) + "</small>" : "") + (l.diary ? '<br><small>日誌:' + esc(l.diary) + "</small>" : "") + (l.slip ? '<br><small>素に戻ったところ:' + esc(l.slip) + "</small>" : "") + (l.seen ? '<br><small>見えたこと・やったこと:' + esc(l.seen) + "</small>" : "") + "</li>"; }).join("") || '<li class="note">まだありません。</li>') + "</ul></div>";
 }
 function renderSet(){ const st = state.data.settings, set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = String(v); }; set("s-depth", st.depth); set("s-every", st.every); set("s-inter", st.inter); }
-function renderAll(){ renderHome(); renderBook(); renderDrill(); renderLog(); renderSet(); }
+/* ───────── 塗り替え:タスクなどへのマイナスのイメージを、本当にある良い面へ塗り替える ─────────
+   札:対象・今のイメージ・新しいイメージ・合言葉。
+   やってみたあとは、マイナスを選ばせない。どちらを選んでも前に進む:
+   新しいイメージを感じた → 証拠に足す / もっと良くできるところがあった → 変えられるなら改善案、変えられない(必要)なら、その中にある良い面を見つける */
+// 塗り替え度:今の流れと、その直前の逆の流れの長さを比べる(統治のときと同じ考え方)。
+// 「新しいイメージを感じた」が続くほど上がり、「もっと良くできるところがあった」(まだ伸びしろ)が続くと下がる。何もない状態は50%
+// やってみた = 「感じた」で残した証拠と、「もっと良くできるところがあった」から残した改善案・良い面。日付の順に1点ずつ
+function ptSeries(r){
+  const ev = (r.evidence || []).map(x => ({ d: x.date, ok: x.kind !== "good" })).concat((r.improve || []).map(x => ({ d: x.date, ok: false })))
+    .sort((a, b) => a.d < b.d ? -1 : a.d > b.d ? 1 : 0);
+  const out = [50]; let cur = null, run = 0, prev = 0;
+  ev.forEach(x => {
+    if (x.ok === cur) run++; else { prev = run; run = 1; cur = x.ok; }
+    const okLen = cur ? run : prev, ngLen = cur ? prev : run;
+    out.push(Math.round(okLen / (okLen + ngLen) * 1000) / 10);
+  });
+  return out;
+}
+function ptSpark(vs, big){
+  if (vs.length < 2) return '<span class="pt-sp0">—</span>';
+  const W = 120, H = big ? 40 : 28, pts = vs.map((v, i) => (i / (vs.length - 1) * W).toFixed(1) + "," + (H - 2 - v / 100 * (H - 4)).toFixed(1)).join(" ");
+  return '<svg viewBox="0 0 ' + W + " " + H + '" class="pt-sp' + (big ? " big" : "") + '" preserveAspectRatio="none"><line x1="0" y1="' + (H / 2) + '" x2="' + W + '" y2="' + (H / 2) + '" class="pt-zero"></line><polyline points="' + pts + '"></polyline></svg>';
+}
+const ptCounts = r => { const ev = r.evidence || []; return { felt: ev.filter(x => x.kind !== "good").length, good: ev.filter(x => x.kind === "good").length, imp: (r.improve || []).length, done: (r.improve || []).filter(x => x.done).length }; };
+function renderPaint(){
+  const d = state.data, box = document.getElementById("paint-main"); if (!box) return;
+  const hp = document.getElementById("home-paint"), hl = (d.reframes || []).filter(r => !r.archived);
+  if (hp) hp.innerHTML = hl.length ? '<div class="card"><h2>見え方を塗り替える<small>取り掛かる前に開く</small></h2>' + hl.map(r => '<button type="button" class="pt-chip" data-pt-go="' + esc(r.id) + '">' + esc(r.name) + "</button>").join("") + "</div>" : "";
+  const list = (d.reframes || []).filter(r => !r.archived), ed = state.paintEdit, open = state.paintOpen && list.find(r => r.id === state.paintOpen);
+  if (open) {   // 取り掛かる前に開く札
+    const r = open, ev = (r.evidence || []).slice().reverse(), step = state.paintStep || null, imps = (r.improve || []);
+    box.innerHTML = '<div class="card pt-focus"><div class="pt-name">' + esc(r.name) + '</div>' +
+      '<div class="pt-before">' + esc(r.before || "") + '</div><div class="pt-arrow">↓</div><div class="pt-after">' + esc(r.after || "") + "</div>" +
+      (r.word ? '<div class="pt-word">「' + esc(r.word) + "」</div>" : "") +
+      (() => { const ser = ptSeries(r); return '<div class="pt-deg"><span>塗り替え度 <b>' + Math.round(ser[ser.length - 1]) + "%</b></span>" + ptSpark(ser, true) + '<small>今の流れ:新しいイメージを感じられた回が続くほど上がる ・ やってみた ' + (ser.length - 1) + "回</small></div>"; })() +
+      '<div class="pt-evh">証拠<small>新しい見え方が本当だと感じた瞬間・見つけた良い面</small></div>' + (ev.length ? ev.map(x => '<div class="pt-ev' + (x.kind === "good" ? " good" : "") + '"><span>' + esc(x.date.slice(5).replace("-", "/")) + (x.kind === "good" ? " 良い面" : "") + "</span>" + esc(x.text) + "</div>").join("") : '<p class="note">まだありません。</p>') +
+      '<div class="pt-evh">やってみて</div>' +
+      (!step ? '<div class="pt-feel"><button type="button" data-pt-step="felt">新しいイメージを感じた</button><button type="button" data-pt-step="more">もっと良くできるところがあった</button></div>'
+       : step === "more" ? '<div class="pt-feel"><button type="button" data-pt-step="change">やり方を変えられる</button><button type="button" data-pt-step="good">やり方は変えられない(必要なこと)</button></div><div class="row"><button type="button" class="linkbtn" data-pt-step="">もどる</button></div>'
+       : '<div class="pt-q">' + ({ felt: "どんな瞬間に感じた?", change: "どう変える?(タスクの設定を直すための改善案)", good: "その中にある、本当の良い面は?" })[step] + "</div>" +
+         '<div class="f"><input id="pt-in" placeholder="' + ({ felt: "例:会議のあと、来週の方向がはっきりして気持ちが軽くなった", change: "例:会議を夜から朝に移す。議題を前の日に3つだけ書いておく", good: "例:決めたことが翌日の行軍表にそのまま出て、迷わずに済む" })[step] + '"></div>' +
+         '<div class="row"><button type="button" class="btn sm" data-pt-add="' + esc(r.id) + ":" + step + '">書き留める</button><button type="button" class="linkbtn" data-pt-step="">もどる</button></div>') +
+      (imps.length ? '<div class="pt-evh">改善案<small>直したら「反映した」</small></div>' + imps.slice().reverse().map(x => '<div class="pt-ev imp' + (x.done ? " done" : "") + '"><span>' + esc(x.date.slice(5).replace("-", "/")) + "</span>" + esc(x.text) +
+          ' <button type="button" class="linkbtn" data-pt-imp="' + esc(r.id) + ":" + esc(x.id) + '">' + (x.done ? "反映済み ✓" : "反映した") + "</button></div>").join("") : "") +
+      '<div class="row"><button type="button" class="btn sm ghost" data-pt-close>閉じる</button></div></div>';
+    return;
+  }
+  let h = '<div class="card"><h2>塗り替え中<small>' + list.length + "件 ・ 折れ線は塗り替え度</small></h2>";
+  h += list.length ? list.map(r => { const c = ptCounts(r);
+      const ser = ptSeries(r), now = ser[ser.length - 1];
+      return '<button type="button" class="pt-row" data-pt-open="' + esc(r.id) + '"><span class="pt-rn"><b>' + esc(r.name) + "</b><small>" + esc(r.after || "") + '</small></span>' + ptSpark(ser) +
+        '<span class="pt-pct">' + Math.round(now) + '<small>%</small></span></button>' +
+        '<div class="pt-cnt">感じた ' + c.felt + " ・ 良い面 " + c.good + " ・ 改善 " + c.done + "/" + c.imp + "</div>" +
+        '<div class="pt-ops"><button type="button" class="linkbtn" data-pt-edit="' + esc(r.id) + '">直す</button><button type="button" class="linkbtn" data-pt-archive="' + esc(r.id) + '">しまう</button></div>'; }).join("")
+    : '<p class="note">まだありません。気が重いタスクや場面を、下から足してください。</p>';
+  h += "</div>";
+  const e = ed && ed !== "new" ? list.find(r => r.id === ed) : null, v = k => esc((e || {})[k] || "");
+  h += ed ? '<div class="card"><h2>' + (e ? "塗り替えを直す" : "塗り替えを足す") + '</h2>' +
+      '<div class="f"><label>何の見え方を塗り替えるか</label><input id="pt-name" value="' + v("name") + '" placeholder="例:作戦会議"></div>' +
+      '<div class="f"><label>今のイメージ(マイナス)</label><textarea id="pt-before" rows="2" placeholder="例:義務的にやらなきゃいけない、めんどくさい作業">' + v("before") + "</textarea></div>" +
+      '<div class="f"><label>新しいイメージ(本当にある良い面)</label><textarea id="pt-after" rows="2" placeholder="例:自分のやっていることに舵をとれていると実感できる、楽しい作業">' + v("after") + "</textarea></div>" +
+      '<div class="f"><label>合言葉(短い一言)</label><input id="pt-word" value="' + v("word") + '" placeholder="例:舵をとる時間"></div>' +
+      '<p class="note">無理に「楽しい」と思い込むのではなく、そのものに実際にある良い面を書くのがこつです。</p>' +
+      '<div class="row"><button type="button" class="btn sm" data-pt-save>' + (e ? "保存する" : "足す") + '</button><button type="button" class="btn sm ghost" data-pt-cancel>やめる</button></div></div>'
+    : '<div class="row"><button type="button" class="btn sm" data-pt-new>+ 塗り替えを足す</button></div>';
+  const arch = (d.reframes || []).filter(r => r.archived);
+  if (arch.length) h += '<p class="note" style="margin-top:1rem">しまったもの:' + arch.map(r => esc(r.name) + ' <button type="button" class="linkbtn" data-pt-unarchive="' + esc(r.id) + '">戻す</button>').join("・") + "</p>";
+  box.innerHTML = h;
+}
+document.addEventListener("click", async e => {
+  const q = s => e.target.closest && e.target.closest(s); let b; const today = () => new Date(Date.now() - 4 * 3600e3 + 9 * 3600e3).toISOString().slice(0, 10);
+  if (q("[data-pt-new]")) { state.paintEdit = "new"; renderPaint(); return; }
+  if ((b = q("[data-pt-edit]"))) { state.paintEdit = b.dataset.ptEdit; renderPaint(); return; }
+  if (q("[data-pt-cancel]")) { state.paintEdit = null; renderPaint(); return; }
+  if (q("[data-pt-save]")) { const g = id => (document.getElementById(id) || {}).value || "", f = { name: g("pt-name").trim(), before: g("pt-before").trim(), after: g("pt-after").trim(), word: g("pt-word").trim() };
+    if (!f.name || !f.after) { toast("何の見え方か と、新しいイメージを書いてください"); return; }
+    const id = state.paintEdit; state.paintEdit = null;
+    await commit(dd => { dd.reframes = dd.reframes || []; if (id && id !== "new") Object.assign(dd.reframes.find(r => r.id === id) || {}, f); else dd.reframes.push(Object.assign({ id: "rf" + Date.now().toString(36), created: today(), evidence: [], ratings: [] }, f)); }); return; }
+  if ((b = q("[data-pt-go]"))) { state.paintOpen = b.dataset.ptGo; showView("paint"); return; }
+  if ((b = q("[data-pt-step]"))) { state.paintStep = b.dataset.ptStep || null; renderPaint(); return; }
+  if ((b = q("[data-pt-add]"))) { const [id, kind] = b.dataset.ptAdd.split(":"), t = ((document.getElementById("pt-in") || {}).value || "").trim(); if (!t) { toast("一言だけ書いてください"); return; }
+    state.paintStep = null;
+    await commit(dd => { const r = (dd.reframes || []).find(x => x.id === id); if (!r) return false;
+      if (kind === "change") (r.improve = r.improve || []).push({ id: "im" + Date.now().toString(36), date: today(), text: t });
+      else (r.evidence = r.evidence || []).push(Object.assign({ date: today(), text: t }, kind === "good" ? { kind: "good" } : {})); });
+    toast(kind === "change" ? "改善案を書き留めました。タスクの設定を直したら「反映した」を押してください" : "書き留めました"); return; }
+  if ((b = q("[data-pt-imp]"))) { const [id, iid] = b.dataset.ptImp.split(":");
+    await commit(dd => { const r = (dd.reframes || []).find(x => x.id === id); const x = r && (r.improve || []).find(y => y.id === iid); if (!x) return false; x.done = x.done ? null : today(); }); return; }
+  if ((b = q("[data-pt-open]"))) { state.paintStep = null; state.paintOpen = b.dataset.ptOpen; renderPaint(); window.scrollTo && window.scrollTo(0, 0); return; }
+  if (q("[data-pt-close]")) { state.paintOpen = null; state.paintStep = null; renderPaint(); return; }
+  if ((b = q("[data-pt-archive]"))) { const id = b.dataset.ptArchive; await commit(dd => { const r = (dd.reframes || []).find(x => x.id === id); if (r) r.archived = today(); }); return; }
+  if ((b = q("[data-pt-unarchive]"))) { const id = b.dataset.ptUnarchive; await commit(dd => { const r = (dd.reframes || []).find(x => x.id === id); if (r) delete r.archived; }); return; }
+});
+function renderAll(){ renderHome(); renderBook(); renderPaint(); renderDrill(); renderLog(); renderSet(); }
 
 /* ───────── 操作(入力欄の値は、押した瞬間に読み取ってから変更を渡す) ───────── */
 function showView(name){ renderAll(); document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + name); document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", String(x.dataset.view === name))); window.scrollTo(0, 0); }
@@ -685,7 +804,7 @@ function boot(){
   // 幕間のあとに入る人物が決まっていれば、数え終わったらそのまま入る
   setInterval(() => { const r = state.rite; if (r && r.kind === "off" && r.steps[r.step] === "幕間" && r.nextId && r.interEnd && now() >= r.interEnd) startRite(r.nextId); }, 500);
 }
-window.__lens = { state, INTERVIEW, SITUATIONS, watch, boundCue };
+window.__lens = { state, INTERVIEW, SITUATIONS, watch, boundCue, renderPaint };
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
 </script>
