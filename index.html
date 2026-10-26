@@ -136,6 +136,14 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 .bp-step{display:grid;grid-template-columns:5.5rem 1fr 1.4rem;gap:.4rem;align-items:center;width:100%;text-align:left;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:inherit;border-radius:8px;padding:.45rem .55rem;margin:.2rem 0;font:inherit;font-size:.9rem;cursor:pointer}
 .bp-step .bp-sn{font-size:.78rem;opacity:.75}.bp-step .bp-ck{text-align:right;font-weight:700}.bp-step.done{opacity:.55}.bp-step.done .bp-sv{text-decoration:line-through}
 
+.src{display:inline-block;min-width:1.15em;text-align:center;font-weight:700;margin-right:.3rem;font-size:.95em}
+.src-f{color:var(--ink,#eee);font-size:1.1em}
+.src,.srcbtn{font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",system-ui,sans-serif;font-variant-emoji:text} .src-s{color:#E7C66A} .src-o{color:var(--acc,#B79CFF)} .src-g{color:var(--sub,#999)}
+.src-legend{display:flex;flex-wrap:wrap;gap:.3rem .9rem;font-size:.8rem;color:var(--sub);margin:.2rem 0 .6rem}
+.src-legend>span{display:inline-flex;align-items:center}
+.srcbtn{display:inline-flex;align-items:center;justify-content:center;width:1.55rem;height:1.55rem;margin-right:.35rem;border-radius:5px;border:1px dashed var(--line,#555);background:transparent;color:var(--sub);font-weight:700;font-size:.9rem;cursor:pointer;vertical-align:middle;padding:0}
+.srcbtn.src-f,.srcbtn.src-s,.srcbtn.src-o,.srcbtn.src-g{border-style:solid;border-color:currentColor}
+.srcbtn.src-f{color:var(--ink,#eee)} .srcbtn.src-s{color:#E7C66A} .srcbtn.src-o{color:var(--acc,#B79CFF)} .srcbtn.src-g{color:var(--sub,#999)}
 /* 印:絵文字はそのまま、文字は人物の色の丸の真ん中に */
 .mk{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;border-radius:50%;vertical-align:middle}
 .mk.txt{font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
@@ -323,7 +331,7 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-26 r7";
+const APP_VERSION = "2026-10-26 r8";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
@@ -390,6 +398,13 @@ const COLORS = ["#B79CFF", "#7AD6A0", "#F0A35E", "#6EC1F0", "#F07A9C", "#E7C66A"
 /* 印:絵文字か、短い文字(4文字まで)。文字のときは、人物の色の丸の真ん中に書く */
 const textOn = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "")); if (!m) return "#1d1b18"; const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
   const L = x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4); return (.2126 * L(r) + .7152 * L(g) + .0722 * L(b)) > .38 ? "#1d1b18" : "#ffffff"; };
+/* 根拠の記号:項目ごとに、その中身がどれくらい確かかを記号で付ける */
+const SRC = { f: ["■\uFE0E", "事実"], s: ["▲\uFE0E", "二次情報"], o: ["◆\uFE0E", "本人の考えから"], g: ["？", "推定"] };   // \uFE0E:絵文字ではなく文字の形で出す
+const SRC_ORDER = ["", "f", "s", "o", "g"];
+const srcOf = (p, k) => (p && p.src && p.src[k]) || "";
+const srcSym = (p, k) => { const v = srcOf(p, k); return v && SRC[v] ? '<span class="src src-' + v + '" title="' + SRC[v][1] + '" aria-label="' + SRC[v][1] + '">' + SRC[v][0] + "</span>" : ""; };
+const srcLegend = () => '<div class="src-legend" aria-label="記号の意味">' + Object.entries(SRC).map(([v, [m, l]]) => '<span><span class="src src-' + v + '">' + m + "</span>" + l + "</span>").join("") + "</div>";
+const srcBtn = (p, k) => { const v = srcOf(p, k); return '<button type="button" class="srcbtn' + (v ? " src-" + v : "") + '" data-srcbtn="' + k + '" data-v="' + v + '" title="' + (v ? SRC[v][1] : "根拠の記号(押すと切り替わる)") + '" aria-label="根拠の記号:' + (v ? SRC[v][1] : "なし") + '">' + (v ? SRC[v][0] : "・") + "</button>"; };
 const markText = p => String((p && p.mark) || "").trim() || (p && p.emoji) || "🎭";
 function markHtml(p, rem){
   const t = String((p && p.mark) || "").trim(), c = (p && p.color) || "#B79CFF", d = rem * 1.5;
@@ -461,7 +476,7 @@ function renderHome(){
     top.innerHTML = '<div class="active" style="' + pc(a) + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div>' +
       '<div class="nm">' + markHtml(a, 1.1) + esc(a.name) + "</div>" + (get(a, "voice.catch") ? '<div class="quote">「' + esc(get(a, "voice.catch")) + "」</div>" : "") + "</div>" +
       '<button type="button" class="deep-btn" data-deepen title="濃くする">' + markHtml(a, 1.1) + "</button></div>" +
-      "<dl>" + [["最初に問う", "think.first"], ["行動の型", "acts"], ["決してしない", "never"], ["自分への声", "voice.self"]].filter(([, k]) => get(a, k)).map(([l, k]) => "<dt>" + l + "</dt><dd>" + esc(get(a, k)) + "</dd>").join("") + "</dl>" +
+      "<dl>" + [["最初に問う", "think.first"], ["行動の型", "acts"], ["決してしない", "never"], ["自分への声", "voice.self"]].filter(([, k]) => get(a, k)).map(([l, k]) => "<dt>" + l + "</dt><dd>" + srcSym(a, k) + esc(get(a, k)) + "</dd>").join("") + "</dl>" +
       (d.active.situation ? '<p class="note">' + esc(d.active.situation) + (d.active.answer ? "<br>" + esc(d.active.answer) : "") + "</p>" : "") +
       '<div class="row" style="margin-top:.6rem;justify-content:space-between"><button type="button" class="btn" data-exit>' + esc(get(a, "exit.motion") ? "退場する" : "退場する") + '</button><button type="button" class="linkbtn" data-back-in>引き戻された</button></div></div>';
   } else {
@@ -522,6 +537,9 @@ function updateMarkPreview(){ const box = document.getElementById("mk-prev"); if
   document.querySelectorAll("[data-sw]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sw.toLowerCase() === String(p.color).toLowerCase() ? "true" : "false")); }
 document.addEventListener("input", e => { const k = e.target && e.target.dataset && e.target.dataset.pf; if (k === "emoji" || k === "mark" || k === "color" || k === "name") updateMarkPreview(); });
 document.addEventListener("change", e => { const k = e.target && e.target.dataset && e.target.dataset.pf; if (k === "emoji" || k === "color") updateMarkPreview(); });
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-srcbtn]"); if (!b) return; e.preventDefault();
+  const v = SRC_ORDER[(SRC_ORDER.indexOf(b.dataset.v || "") + 1) % SRC_ORDER.length]; b.dataset.v = v; b.className = "srcbtn" + (v ? " src-" + v : "");
+  b.textContent = v ? SRC[v][0] : "・"; b.title = v ? SRC[v][1] : "根拠の記号(押すと切り替わる)"; b.setAttribute("aria-label", "根拠の記号:" + (v ? SRC[v][1] : "なし")); });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-sw]"); if (!b) return; const inp = document.querySelector('[data-pf="color"]'); if (inp) { inp.value = b.dataset.sw.toLowerCase(); updateMarkPreview(); } });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-bp-done]"); if (!b || !state.rite) return; const r = state.rite; r.done = r.done || {}; r.done[b.dataset.bpDone] = !r.done[b.dataset.bpDone]; renderRite(); });
 function startRite(id, from){ hideCue(); state.rite = { kind: "on", id, steps: STEPS[state.data.settings.depth] || STEPS.normal, step: 0, situation: "", answer: "", put: "", breaths: 0, ans: {}, from: from || null }; se("open"); renderRite(); }
@@ -593,7 +611,7 @@ function renderBook(){
   box.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:.4rem"><button type="button" class="linkbtn" data-closep>‹ 人物帳</button><span class="row"><button type="button" class="btn sm" data-become="' + esc(p.id) + '">この人になる</button><button type="button" class="btn ghost sm" data-editp>直す</button></span></div>' +
     '<div class="active" style="' + pc(p) + '"><div class="nm">' + markHtml(p, 1.1) + esc(p.name) + "</div>" + (get(p, "voice.catch") ? '<div class="quote">「' + esc(get(p, "voice.catch")) + "」</div>" : "") +
     ((p.roots || []).length ? '<div class="chips">' + p.roots.map(id => { const r = rinenOf(id); return "<span>" + esc(r ? r.title : "(見つからない理念)") + "</span>"; }).join("") + "</div>" : '<p class="note">根っこの理念がまだ結びついていません(直すで選べます)</p>') + "</div>" +
-    '<div class="card sec">' + FIELDS.map(([sec, fs]) => { const vs = fs.filter(([k]) => String(get(p, k) || "").trim()); return vs.length ? "<h3>" + sec + "</h3>" + vs.map(([k, l]) => '<div class="note" style="margin:.2rem 0 0">' + esc(l) + '</div><div class="val">' + esc(get(p, k)) + "</div>").join("") : ""; }).join("") + "</div>" +
+    '<div class="card sec">' + (Object.keys(p.src || {}).length ? srcLegend() : "") + FIELDS.map(([sec, fs]) => { const vs = fs.filter(([k]) => String(get(p, k) || "").trim()); return vs.length ? "<h3>" + sec + "</h3>" + vs.map(([k, l]) => '<div class="note" style="margin:.2rem 0 0">' + esc(l) + '</div><div class="val">' + srcSym(p, k) + esc(get(p, k)) + "</div>").join("") : ""; }).join("") + "</div>" +
     bpHtml(p) +
     '<div class="card"><h2>面接<small>' + ivN + " / " + INTERVIEW.length + "問</small></h2>" + interviewHtml(p) + "</div>" +
     '<div class="card"><h2>問答集<small>' + drills.length + "件</small></h2>" + (drills.slice(-5).reverse().map(x => '<div class="qa"><div class="q">' + md(x.date) + "・" + esc(x.situation) + (x.fit ? "・この人らしさ " + x.fit + "/5" : "") + '</div><div class="a">' + esc(x.answer) + "</div></div>").join("") || '<p class="note">問答のタブで、この人として答える練習をすると、ここにたまります。</p>') + "</div>" +
@@ -613,7 +631,8 @@ function editHtml(p){
     '<div class="f"><label>色</label><div class="sw-row">' + COLORS.map(c => '<button type="button" class="sw" data-sw="' + c + '" style="background:' + c + '" aria-label="色 ' + c + '"' + (c === p.color ? ' aria-pressed="true"' : "") + "></button>").join("") +
       '<label class="sw-free" title="自由に選ぶ"><input type="color" data-pf="color" value="' + esc(/^#[0-9a-f]{6}$/i.test(p.color || "") ? p.color : "#B79CFF") + '" aria-label="色を自由に選ぶ"></label></div></div>' +
     '<div class="f"><label>見本</label><div class="mk-prev" id="mk-prev">' + markHtml(p, 1.6) + '<span class="mk-prev-n" style="color:' + esc(readable(p.color || "#B79CFF")) + '">' + esc(p.name || "名前") + "</span></div></div></div>" +
-    FIELDS.map(([sec, fs]) => '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">' + sec + "</h3>" + fs.map(([k, l, ph, rows]) => '<div class="f"><label>' + esc(l) + "</label>" + (rows ? '<textarea data-pf="' + k + '" rows="' + rows + '" placeholder="' + esc(ph) + '">' + esc(get(p, k) || "") + "</textarea>" : '<input data-pf="' + k + '" placeholder="' + esc(ph) + '" value="' + esc(get(p, k) || "") + '">') + "</div>").join("")).join("") +
+    '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">根拠の記号</h3><p class="note" style="margin:0">各項目の名前の前の「・」を押すと、記号が切り替わる。</p>' + srcLegend() +
+    FIELDS.map(([sec, fs]) => '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">' + sec + "</h3>" + fs.map(([k, l, ph, rows]) => '<div class="f"><label>' + srcBtn(p, k) + esc(l) + "</label>" + (rows ? '<textarea data-pf="' + k + '" rows="' + rows + '" placeholder="' + esc(ph) + '">' + esc(get(p, k) || "") + "</textarea>" : '<input data-pf="' + k + '" placeholder="' + esc(ph) + '" value="' + esc(get(p, k) || "") + '">') + "</div>").join("")).join("") +
     '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">根っこの理念(憲政院)</h3>' + (state.rinen.length ? state.rinen.map(r => '<label class="note" style="display:flex;gap:.4rem"><input type="checkbox" data-pr="' + esc(r.id) + '"' + ((p.roots || []).includes(r.id) ? " checked" : "") + "> " + esc(r.title) + "</label>").join("") : '<p class="note">憲政院に本物の憲法を納めると、理念を選べます。</p>') +
     '<div class="row" style="margin-top:.8rem"><button type="button" class="btn" data-edit-save="' + esc(p.id) + '">保存する</button></div></div>';
 }
@@ -800,7 +819,8 @@ function bind(){
     if ((b = q("[data-edit-save]"))) { const id = b.dataset.editSave, v = {}; document.querySelectorAll("[data-pf]").forEach(el => v[el.dataset.pf] = el.value.trim());
       const roots = Array.from(document.querySelectorAll("[data-pr]")).filter(x => x.checked).map(x => x.dataset.pr);
       if (!v.name) { toast("名前を入れてください"); return; }
-      await commit(d => { const p = d.personas.find(x => x.id === id); if (!p) return false; Object.keys(v).forEach(k => set(p, k, v[k])); p.roots = roots; });
+      const src = {}; document.querySelectorAll("[data-srcbtn]").forEach(el => { if (el.dataset.v) src[el.dataset.srcbtn] = el.dataset.v; });
+      await commit(d => { const p = d.personas.find(x => x.id === id); if (!p) return false; Object.keys(v).forEach(k => set(p, k, v[k])); p.roots = roots; p.src = src; });
       state.edit = false; renderBook(); se("save"); toast("保存しました"); return; }
     if ((b = q("[data-delp]"))) { if (!confirm("この人物を消しますか(記録は残ります)。")) return; const id = b.dataset.delp;
       await commit(d => { d.personas = d.personas.filter(x => x.id !== id); if (d.active && d.active.id === id) d.active = null; }); state.open = null; renderBook(); return; }
