@@ -135,6 +135,20 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
 .bp-rg{margin:.35rem 0;text-align:left}.bp-rgn{font-size:.72rem;opacity:.7;letter-spacing:.1em;margin-bottom:.15rem}
 .bp-step{display:grid;grid-template-columns:5.5rem 1fr 1.4rem;gap:.4rem;align-items:center;width:100%;text-align:left;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:inherit;border-radius:8px;padding:.45rem .55rem;margin:.2rem 0;font:inherit;font-size:.9rem;cursor:pointer}
 .bp-step .bp-sn{font-size:.78rem;opacity:.75}.bp-step .bp-ck{text-align:right;font-weight:700}.bp-step.done{opacity:.55}.bp-step.done .bp-sv{text-decoration:line-through}
+
+/* 印:絵文字はそのまま、文字は人物の色の丸の真ん中に */
+.mk{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;line-height:1;border-radius:50%;vertical-align:middle}
+.mk.txt{font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.pcard .em{font-size:1rem}
+.mkbig{display:flex;justify-content:center;margin:.2rem 0 .4rem}
+.deep-btn .mk{pointer-events:none}
+.sw-row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.sw{width:1.7rem;height:1.7rem;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.sw[aria-pressed="true"]{border-color:var(--ink,#fff);outline:2px solid var(--card,#000);outline-offset:-4px}
+.sw-free{position:relative;width:1.7rem;height:1.7rem;border-radius:50%;overflow:hidden;cursor:pointer;background:conic-gradient(#f66,#fd6,#6d8,#6cf,#a8f,#f6c,#f66);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.sw-free input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.mk-prev{display:flex;align-items:center;gap:.6rem;padding:.4rem 0}
+.mk-prev-n{font-weight:700;font-size:1.2rem}
 </style>
 </head>
 <body>
@@ -309,7 +323,7 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-21 r6";
+const APP_VERSION = "2026-10-26 r7";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
@@ -372,11 +386,21 @@ const INTERVIEW = ["朝起きて、最初に何を考える?", "勉強を始め�
 const SITUATIONS = ["模試の結果が思ったより悪かった", "数学の問題が30分解けない", "朝、起きたくない", "友達が自分より先に進んでいる", "今日の予定の半分しか終わっていない", "勉強中に動画を見たくなった",
   "疲れていて頭が回らない", "先生に厳しいことを言われた", "大事なテストの前日の夜", "試験本番、最初の問題がわからない", "褒められて、気が緩みそう", "やることが多すぎて、何から手をつけるか迷う",
   "同じミスを3回くり返した", "体調が悪い日", "うまくいって、調子に乗りそう", "将来が不安になった"];
-const COLORS = ["#B79CFF", "#7AD6A0", "#F0A35E", "#6EC1F0", "#F07A9C", "#E7C66A", "#9FB4F2", "#C9A0E8"];
+const COLORS = ["#B79CFF", "#7AD6A0", "#F0A35E", "#6EC1F0", "#F07A9C", "#E7C66A", "#9FB4F2", "#C9A0E8", "#4F5A2E", "#8E2A22", "#2F3A4A", "#D9D4C7"];
+/* 印:絵文字か、短い文字(4文字まで)。文字のときは、人物の色の丸の真ん中に書く */
+const textOn = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "")); if (!m) return "#1d1b18"; const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const L = x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4); return (.2126 * L(r) + .7152 * L(g) + .0722 * L(b)) > .38 ? "#1d1b18" : "#ffffff"; };
+const markText = p => String((p && p.mark) || "").trim() || (p && p.emoji) || "🎭";
+function markHtml(p, rem){
+  const t = String((p && p.mark) || "").trim(), c = (p && p.color) || "#B79CFF", d = rem * 1.5;
+  if (!t) return '<span class="mk" style="width:' + d + 'rem;height:' + d + 'rem;font-size:' + (rem * .95) + 'rem">' + esc((p && p.emoji) || "🎭") + "</span>";
+  const len = Array.from(t).length, fs = rem * (len <= 1 ? .8 : len === 2 ? .66 : len === 3 ? .5 : .42);
+  return '<span class="mk txt" style="width:' + d + 'rem;height:' + d + 'rem;background:' + esc(c) + ";color:" + textOn(c) + ";font-size:" + fs + 'rem">' + esc(t) + "</span>";
+}
 const lines = t => String(t || "").split(/\n/).map(x => x.trim()).filter(Boolean);
 const paras = t => String(t || "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
 const pick = a => a.length ? a[Math.floor(Math.random() * a.length)] : "";
-const EMOJIS = ["🌱", "🎓", "⚔️", "🔬", "🛠️", "🧭", "🦉", "🔥", "🌊", "🗻", "🎯", "🧘", "🕵️"];
+const EMOJIS = ["🌱", "🎓", "⚔️", "🔬", "🛠️", "🧭", "🦉", "🔥", "🌊", "🗻", "🎯", "🧘", "🕵️", "⌚", "💪", "🪖", "🛡️", "🏃", "⛰️"];
 
 /* ───────── 状態と保存(ぶつかったら読み直して、同じ変更をかけ直す) ───────── */
 const state = { conn: null, data: clone(DEFAULTS), sha: null, rinen: [], open: null, edit: false, rite: null, drill: null, iv: null };
@@ -423,7 +447,10 @@ let toastT = null;
 function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 3200); }
 const se = n => { try { SE.play(n); } catch (e) {} };
 const P = id => state.data.personas.find(p => p.id === id) || null;
-const pc = p => "--pc:" + esc((p && p.color) || "#B79CFF");
+const readable = hex => { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "")); if (!m) return hex || "#B79CFF"; const n = parseInt(m[1], 16); let r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+  const lum = (.2126 * r + .7152 * g + .0722 * b) / 255; if (lum >= .42) return "#" + m[1]; const k = Math.min(.6, (.42 - lum) * 1.6 + .2); r = Math.round(r + (255 - r) * k); g = Math.round(g + (255 - g) * k); b = Math.round(b + (255 - b) * k);
+  return "#" + [r, g, b].map(x => x.toString(16).padStart(2, "0")).join(""); };
+const pc = p => "--pc:" + esc(readable((p && p.color) || "#B79CFF")) + ";--pcraw:" + esc((p && p.color) || "#B79CFF");
 const rinenOf = id => state.rinen.find(r => r.id === id) || null;
 
 /* ───────── いま ───────── */
@@ -432,8 +459,8 @@ function renderHome(){
   document.getElementById("home-sub").innerHTML = a ? esc(a.name) : "—";
   if (a) {
     top.innerHTML = '<div class="active" style="' + pc(a) + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div>' +
-      '<div class="nm"><span>' + esc(a.emoji || "🎭") + "</span>" + esc(a.name) + "</div>" + (get(a, "voice.catch") ? '<div class="quote">「' + esc(get(a, "voice.catch")) + "」</div>" : "") + "</div>" +
-      '<button type="button" class="deep-btn" data-deepen title="濃くする">' + esc(a.emoji || "🎭") + "</button></div>" +
+      '<div class="nm">' + markHtml(a, 1.1) + esc(a.name) + "</div>" + (get(a, "voice.catch") ? '<div class="quote">「' + esc(get(a, "voice.catch")) + "」</div>" : "") + "</div>" +
+      '<button type="button" class="deep-btn" data-deepen title="濃くする">' + markHtml(a, 1.1) + "</button></div>" +
       "<dl>" + [["最初に問う", "think.first"], ["行動の型", "acts"], ["決してしない", "never"], ["自分への声", "voice.self"]].filter(([, k]) => get(a, k)).map(([l, k]) => "<dt>" + l + "</dt><dd>" + esc(get(a, k)) + "</dd>").join("") + "</dl>" +
       (d.active.situation ? '<p class="note">' + esc(d.active.situation) + (d.active.answer ? "<br>" + esc(d.active.answer) : "") + "</p>" : "") +
       '<div class="row" style="margin-top:.6rem;justify-content:space-between"><button type="button" class="btn" data-exit>' + esc(get(a, "exit.motion") ? "退場する" : "退場する") + '</button><button type="button" class="linkbtn" data-back-in>引き戻された</button></div></div>';
@@ -447,7 +474,7 @@ function renderHome(){
 const lastUse = p => Math.max(0, ...state.data.logs.filter(l => l.personaId === p.id).map(l => l.from));
 function pcardHtml(p, attr){
   const ls = state.data.logs.filter(l => l.personaId === p.id), dp = ls.filter(l => l.depth), avg = dp.length ? dp.reduce((s, l) => s + l.depth, 0) / dp.length : 0;
-  return '<div class="pcard" style="' + pc(p) + '" ' + attr + '="' + esc(p.id) + '"><span class="em">' + esc(p.emoji || "🎭") + '</span><div><div class="pn">' + esc(p.name) + (p.core ? ' <span class="note">(本来の自分)</span>' : "") + '</div><div class="ps">' + esc(p.scenes || get(p, "cue.place") || get(p, "profile.age") || "") + "</div></div>" +
+  return '<div class="pcard" style="' + pc(p) + '" ' + attr + '="' + esc(p.id) + '"><span class="em">' + markHtml(p, 1.35) + '</span><div><div class="pn">' + esc(p.name) + (p.core ? ' <span class="note">(本来の自分)</span>' : "") + '</div><div class="ps">' + esc(p.scenes || get(p, "cue.place") || get(p, "profile.age") || "") + "</div></div>" +
     '<div class="pm">' + ls.length + "回<br><span class=\"note\">設計図 " + bpCount(p).n + "/" + bpCount(p).all + "</span>" + (dp.length ? '<br>なりきり <span class="bar"><i style="width:' + Math.round(avg / 5 * 100) + '%"></i></span>' : "") + "</div></div>";
 }
 
@@ -488,6 +515,14 @@ function watch(){
 
 /* ───────── 入る儀式(短い・ふつう・深い)・退場と幕間・引き戻されたとき ───────── */
 const STEPS = { short: ["整える", "名", "体", "声", "なる"], normal: ["置く", "整える", "名", "世界", "体", "声", "受け取る", "なる"], deep: ["置く", "整える", "名", "世界", "記憶", "体", "声", "答える", "受け取る", "なる"] };
+/* 描く画面:印と色の見本を、その場で変える */
+function updateMarkPreview(){ const box = document.getElementById("mk-prev"); if (!box) return; const v = k => { const el = document.querySelector('[data-pf="' + k + '"]'); return el ? el.value : ""; };
+  const p = { emoji: v("emoji"), mark: v("mark"), color: v("color"), name: v("name") };
+  box.innerHTML = markHtml(p, 1.6) + '<span class="mk-prev-n" style="color:' + esc(readable(p.color)) + '">' + esc(p.name || "名前") + "</span>";
+  document.querySelectorAll("[data-sw]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sw.toLowerCase() === String(p.color).toLowerCase() ? "true" : "false")); }
+document.addEventListener("input", e => { const k = e.target && e.target.dataset && e.target.dataset.pf; if (k === "emoji" || k === "mark" || k === "color" || k === "name") updateMarkPreview(); });
+document.addEventListener("change", e => { const k = e.target && e.target.dataset && e.target.dataset.pf; if (k === "emoji" || k === "color") updateMarkPreview(); });
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-sw]"); if (!b) return; const inp = document.querySelector('[data-pf="color"]'); if (inp) { inp.value = b.dataset.sw.toLowerCase(); updateMarkPreview(); } });
 document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-bp-done]"); if (!b || !state.rite) return; const r = state.rite; r.done = r.done || {}; r.done[b.dataset.bpDone] = !r.done[b.dataset.bpDone]; renderRite(); });
 function startRite(id, from){ hideCue(); state.rite = { kind: "on", id, steps: STEPS[state.data.settings.depth] || STEPS.normal, step: 0, situation: "", answer: "", put: "", breaths: 0, ans: {}, from: from || null }; se("open"); renderRite(); }
 function startOff(){ const a = state.data.active; if (!a) return; hideCue(); state.rite = { kind: "off", id: a.id, steps: ["退場", "日誌", "幕間"], step: 0, diary: "" }; renderRite(); }
@@ -502,7 +537,7 @@ function stepBody(r, p, name){
       groups.map(([g, its]) => '<div class="bp-rg"><div class="bp-rgn">' + g + "</div>" + its.map(it => { const v = it.slice(1).map(k => String(get(p, k) || "").trim()).filter(Boolean).filter(x => !/^https?:\/\//.test(x)).join(" / "), key = it[1];
         return '<button type="button" class="bp-step' + (r.done[key] ? " done" : "") + '" data-bp-done="' + esc(key) + '"><span class="bp-sn">' + esc(it[0]) + '</span><span class="bp-sv">' + esc(v || "(曲を流す)") + '</span><span class="bp-ck">' + (r.done[key] ? "✓" : "") + "</span></button>"; }).join("") + "</div>").join("") +
       '<div class="note">一つずつ整えて、押して印を付ける(付けなくても進める)。</div>'; }
-  if (name === "名") return '<div style="font-size:3.2rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (get(p, "profile.look") ? '<div class="note">' + esc(get(p, "profile.look")) + "</div>" : "");
+  if (name === "名") return '<div class="mkbig">' + markHtml(p, 2.6) + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (get(p, "profile.look") ? '<div class="note">' + esc(get(p, "profile.look")) + "</div>" : "");
   if (name === "世界") { const ls = lines(get(p, "world.scene")).concat(r.kind === "back" ? [] : []), show = r.kind === "back" ? ls.slice(0, 1) : ls;
     return '<div class="rite-h">' + esc(p.name) + 'の世界</div><div class="rite-text lines">' + (show.length ? show.map((t, i) => '<p style="animation-delay:' + (i * 1.8) + 's">' + esc(t) + "</p>").join("") : "<p>" + esc(get(p, "profile.life") || "") + "</p>") + "</div>"; }
   if (name === "記憶") { const m = r.memory || (r.memory = pick(paras(get(p, "world.memories"))));
@@ -511,8 +546,8 @@ function stepBody(r, p, name){
   if (name === "声") return '<div class="rite-h">声</div><div class="rite-big">「' + esc(get(p, "voice.catch") || "……") + '」</div>' + (get(p, "world.monologue") ? '<div class="rite-text">' + esc(get(p, "world.monologue")) + "</div>" : "") + '<div class="note">' + esc(get(p, "voice.first") || "") + "</div>";
   if (name === "答える") { const qs = r.qs || (r.qs = pickQs(p)); return '<div class="rite-h">' + esc(p.name) + "として</div>" + qs.map(i => '<div class="rite-text" style="font-size:1rem">' + esc(INTERVIEW[i]) + '</div><textarea data-rt-q="' + i + '" rows="2">' + esc(r.ans[i] != null ? r.ans[i] : ((p.interview || {})[i] || "")) + "</textarea>").join(""); }
   if (name === "受け取る") return '<div class="rite-h">受け取る</div><div class="rite-text">いま、どんな状況?</div><input id="rt-sit" value="' + esc(r.situation) + '">' + (get(p, "think.first") ? '<div class="note">' + esc(get(p, "think.first")) + "</div>" : "") + '<textarea id="rt-ans" rows="3" placeholder="' + esc(p.name) + 'として">' + esc(r.answer) + "</textarea>";
-  if (name === "なる") return '<div style="font-size:3.2rem">' + esc(p.emoji || "🎭") + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (p.never ? '<div class="note">' + esc(p.never) + "</div>" : "");
-  if (name === "退場") return '<div style="font-size:3rem">' + esc(p.emoji || "🎭") + '</div>' + (get(p, "exit.motion") ? '<div class="rite-text" style="font-style:italic">(' + esc(get(p, "exit.motion")) + ")</div>" : "") + '<div class="rite-big" style="font-size:1.6rem">' + esc(get(p, "exit.line") || "今日は、ここまで") + "</div>";
+  if (name === "なる") return '<div class="mkbig">' + markHtml(p, 2.6) + '</div><div class="rite-big">' + esc(p.name) + "</div>" + (p.never ? '<div class="note">' + esc(p.never) + "</div>" : "");
+  if (name === "退場") return '<div class="mkbig">' + markHtml(p, 2.4) + '</div>' + (get(p, "exit.motion") ? '<div class="rite-text" style="font-style:italic">(' + esc(get(p, "exit.motion")) + ")</div>" : "") + '<div class="rite-big" style="font-size:1.6rem">' + esc(get(p, "exit.line") || "今日は、ここまで") + "</div>";
   if (name === "日誌") return '<div class="rite-h">' + esc(p.name) + 'の日誌</div><textarea id="rt-diary" rows="3" placeholder="' + esc(p.name) + 'の声で、一行(書かなくてもいい)">' + esc(r.diary) + "</textarea>";
   if (name === "幕間") { const left = Math.max(0, Math.ceil((r.interEnd - now()) / 1000));
     if (left > 0) return '<div class="blank">立つ ・ 顔を洗う ・ 水を飲む ・ 場所を移る</div><div class="count" id="int-n">' + left + "</div>";
@@ -556,7 +591,7 @@ function renderBook(){
   if (state.edit) { box.innerHTML = editHtml(p); return; }
   const ivN = Object.values(p.interview || {}).filter(x => String(x || "").trim()).length, drills = d.drills.filter(x => x.personaId === p.id);
   box.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:.4rem"><button type="button" class="linkbtn" data-closep>‹ 人物帳</button><span class="row"><button type="button" class="btn sm" data-become="' + esc(p.id) + '">この人になる</button><button type="button" class="btn ghost sm" data-editp>直す</button></span></div>' +
-    '<div class="active" style="' + pc(p) + '"><div class="nm"><span>' + esc(p.emoji || "🎭") + "</span>" + esc(p.name) + "</div>" + (get(p, "voice.catch") ? '<div class="quote">「' + esc(get(p, "voice.catch")) + "」</div>" : "") +
+    '<div class="active" style="' + pc(p) + '"><div class="nm">' + markHtml(p, 1.1) + esc(p.name) + "</div>" + (get(p, "voice.catch") ? '<div class="quote">「' + esc(get(p, "voice.catch")) + "」</div>" : "") +
     ((p.roots || []).length ? '<div class="chips">' + p.roots.map(id => { const r = rinenOf(id); return "<span>" + esc(r ? r.title : "(見つからない理念)") + "</span>"; }).join("") + "</div>" : '<p class="note">根っこの理念がまだ結びついていません(直すで選べます)</p>') + "</div>" +
     '<div class="card sec">' + FIELDS.map(([sec, fs]) => { const vs = fs.filter(([k]) => String(get(p, k) || "").trim()); return vs.length ? "<h3>" + sec + "</h3>" + vs.map(([k, l]) => '<div class="note" style="margin:.2rem 0 0">' + esc(l) + '</div><div class="val">' + esc(get(p, k)) + "</div>").join("") : ""; }).join("") + "</div>" +
     bpHtml(p) +
@@ -573,8 +608,11 @@ function interviewHtml(p){
 }
 function editHtml(p){
   return '<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">人物を描く</h2><button type="button" class="linkbtn" data-edit-x>やめる</button></div>' +
-    '<div class="grid2"><div class="f"><label>名前</label><input data-pf="name" value="' + esc(p.name) + '"></div><div class="f"><label>印</label><select data-pf="emoji">' + EMOJIS.concat(EMOJIS.includes(p.emoji) ? [] : [p.emoji || "🎭"]).map(e => "<option" + (e === p.emoji ? " selected" : "") + ">" + e + "</option>").join("") + '</select></div>' +
-    '<div class="f"><label>色</label><select data-pf="color">' + COLORS.map(c => '<option value="' + c + '"' + (c === p.color ? " selected" : "") + ' style="color:' + c + '">■ ' + c + "</option>").join("") + "</select></div></div>" +
+    '<div class="grid2"><div class="f"><label>名前</label><input data-pf="name" value="' + esc(p.name) + '"></div><div class="f"><label>印(絵文字)</label><select data-pf="emoji">' + EMOJIS.concat(EMOJIS.includes(p.emoji) ? [] : [p.emoji || "🎭"]).map(e => "<option" + (e === p.emoji ? " selected" : "") + ">" + e + "</option>").join("") + '</select></div>' +
+    '<div class="f"><label>印(文字・4文字まで)</label><input data-pf="mark" maxlength="4" placeholder="例:4:30 空なら絵文字" value="' + esc(p.mark || "") + '"></div>' +
+    '<div class="f"><label>色</label><div class="sw-row">' + COLORS.map(c => '<button type="button" class="sw" data-sw="' + c + '" style="background:' + c + '" aria-label="色 ' + c + '"' + (c === p.color ? ' aria-pressed="true"' : "") + "></button>").join("") +
+      '<label class="sw-free" title="自由に選ぶ"><input type="color" data-pf="color" value="' + esc(/^#[0-9a-f]{6}$/i.test(p.color || "") ? p.color : "#B79CFF") + '" aria-label="色を自由に選ぶ"></label></div></div>' +
+    '<div class="f"><label>見本</label><div class="mk-prev" id="mk-prev">' + markHtml(p, 1.6) + '<span class="mk-prev-n" style="color:' + esc(readable(p.color || "#B79CFF")) + '">' + esc(p.name || "名前") + "</span></div></div></div>" +
     FIELDS.map(([sec, fs]) => '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">' + sec + "</h3>" + fs.map(([k, l, ph, rows]) => '<div class="f"><label>' + esc(l) + "</label>" + (rows ? '<textarea data-pf="' + k + '" rows="' + rows + '" placeholder="' + esc(ph) + '">' + esc(get(p, k) || "") + "</textarea>" : '<input data-pf="' + k + '" placeholder="' + esc(ph) + '" value="' + esc(get(p, k) || "") + '">') + "</div>").join("")).join("") +
     '<h3 style="font-size:.9rem;margin:1rem 0 .2rem;color:var(--acc)">根っこの理念(憲政院)</h3>' + (state.rinen.length ? state.rinen.map(r => '<label class="note" style="display:flex;gap:.4rem"><input type="checkbox" data-pr="' + esc(r.id) + '"' + ((p.roots || []).includes(r.id) ? " checked" : "") + "> " + esc(r.title) + "</label>").join("") : '<p class="note">憲政院に本物の憲法を納めると、理念を選べます。</p>') +
     '<div class="row" style="margin-top:.8rem"><button type="button" class="btn" data-edit-save="' + esc(p.id) + '">保存する</button></div></div>';
@@ -587,7 +625,7 @@ function renderDrill(){
   const dr = state.drill || (state.drill = { personaId: (d.active && d.active.id) || d.personas[0].id, situation: pickSituation(), fit: 0 });
   const p = P(dr.personaId) || d.personas[0];
   box.innerHTML = '<div class="card" style="' + pc(p) + '"><h2>この人として答える<small>答えがたまるほど、人物がぶれなくなる</small></h2>' +
-    '<div class="f"><label>人物</label><select id="dr-p">' + d.personas.map(x => '<option value="' + esc(x.id) + '"' + (x.id === p.id ? " selected" : "") + ">" + esc((x.emoji || "") + " " + x.name) + "</option>").join("") + "</select></div>" +
+    '<div class="f"><label>人物</label><select id="dr-p">' + d.personas.map(x => '<option value="' + esc(x.id) + '"' + (x.id === p.id ? " selected" : "") + ">" + esc(markText(x) + " " + x.name) + "</option>").join("") + "</select></div>" +
     '<div class="qa"><div class="q">場面</div><b style="font-size:1.05rem">' + esc(dr.situation) + '</b></div><div class="row"><button type="button" class="btn ghost sm" data-dr-next>別の場面</button><input id="dr-own" placeholder="自分で場面を書く" style="flex:1;min-width:9rem;padding:.3rem .5rem;border:1px solid var(--rule);border-radius:8px;background:#151229"><button type="button" class="btn ghost sm" data-dr-own>この場面にする</button></div>' +
     (get(p, "think.first") ? '<p class="note">' + esc(p.name) + "が最初に問うこと:" + esc(get(p, "think.first")) + "</p>" : "") +
     '<div class="f"><label>' + esc(p.name) + "なら、どう受け取り、どう動く?</label><textarea id=\"dr-ans\" rows=\"4\"></textarea></div>" +
@@ -610,10 +648,10 @@ function renderLog(){
       later.map(l => { const p = P(l.personaId); return '<div class="qa" style="' + pc(p) + '"><div class="q">' + md(taskDay(l.from)) + " " + hm(l.from) + "〜" + hm(l.to) + "・" + esc(p ? p.name : "") + (l.slips ? "・引き戻された " + l.slips + "回" : "") + (l.deepens ? "・濃くした " + l.deepens + "回" : "") + "</div>" +
         (l.diary ? '<div class="a">日誌:' + esc(l.diary) + "</div>" : "") + '<div class="note">どれだけなりきれた?</div><div class="rate">' + [1, 2, 3, 4, 5].map(n => '<button type="button" data-later-depth="' + esc(l.id) + ":" + n + '" aria-pressed="' + (lp[l.id] === n) + '">' + n + "</button>").join("") + "</div>" +
         '<div class="f"><input id="lt-slip-' + esc(l.id) + '" placeholder="どこで素に戻った?(なくてもいい)"></div><button type="button" class="btn sm" data-later-save="' + esc(l.id) + '">残す</button></div>'; }).join("") + "</div>" : "") +
-    '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + esc(s.p.emoji || "🎭") + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + "</div></div>" +
+    '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + markHtml(s.p, 1.35) + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + "</div></div>" +
       '<div class="pm">' + (s.avg != null ? "なりきり " + (Math.round(s.avg * 10) / 10) + '/5<br><span class="bar"><i style="width:' + Math.round(s.avg / 5 * 100) + '%"></i></span>' : "まだ") + "</div></div>").join("") || '<p class="note">まだありません。</p>') + "</div>" +
     '<div class="card"><h2>これまで</h2><ul class="log">' + (d.logs.slice(-30).reverse().map(l => { const p = P(l.personaId);
-      return '<li><span class="t">' + md(taskDay(l.from)) + " " + hm(l.from) + (l.to ? "〜" + hm(l.to) : "") + "</span> " + esc(p ? (p.emoji || "") + p.name : "(消した人物)") + (l.depth ? "・なりきり " + l.depth + "/5" : "") +
+      return '<li><span class="t">' + md(taskDay(l.from)) + " " + hm(l.from) + (l.to ? "〜" + hm(l.to) : "") + "</span> " + esc(p ? markText(p) + " " + p.name : "(消した人物)") + (l.depth ? "・なりきり " + l.depth + "/5" : "") +
         (l.situation ? '<br><small>状況:' + esc(l.situation) + "</small>" : "") + (l.diary ? '<br><small>日誌:' + esc(l.diary) + "</small>" : "") + (l.slip ? '<br><small>素に戻ったところ:' + esc(l.slip) + "</small>" : "") + (l.seen ? '<br><small>見えたこと・やったこと:' + esc(l.seen) + "</small>" : "") + "</li>"; }).join("") || '<li class="note">まだありません。</li>') + "</ul></div>";
 }
 function renderSet(){ const st = state.data.settings, set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = String(v); }; set("s-depth", st.depth); set("s-every", st.every); set("s-inter", st.inter); }
