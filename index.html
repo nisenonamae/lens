@@ -331,7 +331,7 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-26 r8";
+const APP_VERSION = "2026-10-26 r9";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
@@ -360,7 +360,7 @@ const FIELDS = [
   ["全身の設計図:体", [["body.posture", "姿勢", "例:肩を下げ、あごを引く"], ["body.breath", "呼吸", "例:4つ吸って、6つ吐く"], ["bp.face", "表情(口元・眉・目の力)", "例:口を結び、眉の力を抜く。目は静か"], ["body.walk", "歩き方", "例:一定の速さで、急がない"],
     ["bp.move", "動き(手の置き方・テンポ・癖)", "例:手は机の上に置く。動きはゆっくり、一つずつ", 2], ["cue.posture", "入るときの仕草", "例:手首を一度握る"], ["bp.tension", "力の入り方(どこに入れ、どこを抜くか)", "例:指先にだけ力。肩と顎は抜く"], ["bp.voice", "声(大きさ・速さ・高さ)", "例:低く、ゆっくり、短く"]]],
   ["全身の設計図:心の中", [["bp.attention", "注意(何に目が行き、何を気にしないか)", "例:次の一手だけを見る。点数は気にしない", 2], ["bp.tempo", "時間の感じ方", "例:急がない。一つ終わるまで時間は止まっている"], ["bp.mood", "気分の基調", "例:静かで、冷えている"]]],
-  ["行動の型", [["acts", "朝の動き・勉強への向き合い方・迷ったときの決め方", "例:始める前に手順を3行で書く", 3]]],
+  ["行動の型", [["acts", "行動の型(朝の動き・物事への向き合い方・迷ったときの決め方)", "例:始める前に手順を3行で書く", 3]]],
   ["決してしないこと", [["never", "この人が絶対にやらないこと", "例:確かめずに次へ進む", 2]]],
   ["呼ぶ場面", [["scenes", "どんなときに、この人になるか", "例:数学の演習、試験本番", 2]]],
   ["その人の世界", [["world.scene", "情景(一行ずつ、ゆっくり読む)", "例:石造りの部屋。窓の外で波が岩に当たって引いていく。", 5], ["world.monologue", "独白(心の中の声)", "例:今日の灯りは、もう十分に照らした。", 4],
@@ -530,6 +530,67 @@ function watch(){
 
 /* ───────── 入る儀式(短い・ふつう・深い)・退場と幕間・引き戻されたとき ───────── */
 const STEPS = { short: ["整える", "名", "体", "声", "なる"], normal: ["置く", "整える", "名", "世界", "体", "声", "受け取る", "なる"], deep: ["置く", "整える", "名", "世界", "記憶", "体", "声", "答える", "受け取る", "なる"] };
+
+/* ───────── まとめて入れる・書き出す ─────────
+   形式:{ "lens": "personas", "personas": [ { "name", "mark", "emoji", "color", "fields": { 項目のキー: 中身 }, "src": { 項目のキー: "■" | "▲" | "◆" | "？" } } ] }
+   同じ名前の人物がいれば、書いてある項目だけ上書きする(面接・問答集などはそのまま) */
+const FIELD_KEYS = FIELDS.flatMap(([, fs]) => fs.map(f => f[0]));
+const SRC_IN = { "■": "f", "▲": "s", "◆": "o", "？": "g", "?": "g", f: "f", s: "s", o: "o", g: "g" };
+let bulkParsed = null;
+function bulkParse(text){
+  let j; try { j = JSON.parse(String(text || "").trim()); } catch (e) { return { err: "読めませんでした(形式が崩れています):" + e.message }; }
+  const list = Array.isArray(j) ? j : (j && j.personas) || [];
+  if (!list.length) return { err: "人物が1人も入っていません" };
+  const out = [], warn = [];
+  list.forEach((x, i) => {
+    const name = String((x && x.name) || "").trim(); if (!name) { warn.push((i + 1) + "人目:名前がないので飛ばします"); return; }
+    const fields = {}, src = {}, unknown = [];
+    Object.entries(x.fields || {}).forEach(([k, v]) => { if (!FIELD_KEYS.includes(k)) { unknown.push(k); return; } fields[k] = Array.isArray(v) ? v.join("\n") : String(v == null ? "" : v); });
+    Object.entries(x.src || {}).forEach(([k, v]) => { const c = SRC_IN[String(v).trim()]; if (FIELD_KEYS.includes(k) && c) src[k] = c; });
+    if (unknown.length) warn.push(name + ":知らない項目 " + unknown.join("、") + " は飛ばします");
+    const ex = state.data.personas.find(p => !p.core && p.name.trim() === name);
+    out.push({ name, mark: x.mark != null ? String(x.mark).slice(0, 4) : null, emoji: x.emoji || null, color: /^#[0-9a-f]{6}$/i.test(x.color || "") ? x.color : null, fields, src, exists: !!ex });
+  });
+  return { list: out, warn };
+}
+function bulkHtml(){
+  const r = bulkParsed;
+  return '<div class="row" style="justify-content:space-between;margin-bottom:.4rem"><button type="button" class="linkbtn" data-bulk-close>‹ 人物帳</button></div>' +
+    '<div class="card"><h2>まとめて入れる</h2><p class="note" style="margin:0 0 .5rem">人物のデータ(.json)を選ぶか、中身を貼り付けて「読み込む」。同じ名前の人物がいれば、書いてある項目だけ上書きします(面接や問答集は消えません)。</p>' +
+    '<div class="f"><label>ファイルから</label><input type="file" id="bulk-file" accept=".json,.txt,application/json,text/plain"></div>' +
+    '<div class="f"><label>または貼り付け</label><textarea id="bulk-in" rows="6" placeholder="{ &quot;lens&quot;: &quot;personas&quot;, &quot;personas&quot;: [ … ] }"></textarea></div>' +
+    '<div class="row"><button type="button" class="btn ghost" data-bulk-read>読み込む</button><button type="button" class="btn ghost" data-bulk-export>今の人物を書き出す</button></div>' +
+    '<div id="bulk-prev">' + (r ? (r.err ? '<p class="note" style="color:#F07A9C">' + esc(r.err) + "</p>" :
+      '<h3 style="font-size:.95rem;margin:.8rem 0 .3rem">入れる人物</h3>' + r.list.map(x => '<div class="row" style="gap:.5rem;align-items:center;margin:.25rem 0">' + markHtml({ mark: x.mark, emoji: x.emoji || "🎭", color: x.color || "#B79CFF" }, 1) +
+        "<b>" + esc(x.name) + '</b><span class="note" style="margin:0">' + Object.keys(x.fields).length + "項目・記号" + Object.keys(x.src).length + " ・ " + (x.exists ? "今いる人物を上書き" : "新しく作る") + "</span></div>").join("") +
+      (r.warn.length ? '<p class="note">' + r.warn.map(esc).join("<br>") + "</p>" : "") +
+      '<div class="row" style="margin-top:.6rem"><button type="button" class="btn" data-bulk-go>' + r.list.length + "人を入れる</button></div>") : "") + "</div></div>";
+}
+function bulkExport(){
+  const ps = state.data.personas.filter(p => !p.core).map(p => { const fields = {}, src = {};
+    FIELD_KEYS.forEach(k => { const v = get(p, k); if (String(v || "").trim()) fields[k] = v; const c = (p.src || {})[k]; if (c && SRC[c]) src[k] = SRC[c][0].replace("\uFE0E", ""); });
+    return { name: p.name, mark: p.mark || "", emoji: p.emoji || "", color: p.color || "", fields, src }; });
+  return JSON.stringify({ lens: "personas", version: 1, personas: ps }, null, 2);
+}
+document.addEventListener("change", e => { if (!e.target || e.target.id !== "bulk-file") return; const f = e.target.files && e.target.files[0]; if (!f) return;
+  const rd = new FileReader(); rd.onload = () => { const ta = document.getElementById("bulk-in"); bulkParsed = bulkParse(rd.result); renderBook(); const ta2 = document.getElementById("bulk-in"); if (ta2) ta2.value = rd.result; }; rd.readAsText(f); });
+document.addEventListener("click", async e => {
+  const t = e.target.closest && e.target.closest("[data-bulk],[data-bulk-close],[data-bulk-read],[data-bulk-go],[data-bulk-export]"); if (!t) return;
+  if (t.hasAttribute("data-bulk")) { state.bulk = true; bulkParsed = null; renderBook(); return; }
+  if (t.hasAttribute("data-bulk-close")) { state.bulk = false; bulkParsed = null; renderBook(); return; }
+  if (t.hasAttribute("data-bulk-read")) { const v = (document.getElementById("bulk-in") || {}).value || ""; bulkParsed = bulkParse(v); renderBook(); const ta = document.getElementById("bulk-in"); if (ta) ta.value = v; return; }
+  if (t.hasAttribute("data-bulk-export")) { const txt = bulkExport(); const ta = document.getElementById("bulk-in"); if (ta) ta.value = txt;
+    try { await navigator.clipboard.writeText(txt); toast("書き出して、コピーしました"); } catch (x) { toast("書き出しました(下の欄からコピーしてください)"); } return; }
+  if (t.hasAttribute("data-bulk-go")) { const r = bulkParsed; if (!r || !r.list) return;
+    await commit(d => { r.list.forEach(x => {
+      let p = d.personas.find(q => !q.core && q.name.trim() === x.name);
+      if (!p) { const n = d.personas.length; p = { id: "p" + uid(), name: x.name, emoji: EMOJIS[n % EMOJIS.length], color: COLORS[n % COLORS.length], roots: [], interview: {}, created: taskDay() }; d.personas.push(p); }
+      if (x.mark != null) p.mark = x.mark; if (x.emoji) p.emoji = x.emoji; if (x.color) p.color = x.color;
+      p.src = p.src || {};
+      Object.entries(x.fields).forEach(([k, v]) => { set(p, k, v); if (x.src[k]) p.src[k] = x.src[k]; else delete p.src[k]; });
+    }); });
+    se("save"); toast(r.list.length + "人を入れました"); state.bulk = false; bulkParsed = null; renderBook(); return; }
+});
 /* 描く画面:印と色の見本を、その場で変える */
 function updateMarkPreview(){ const box = document.getElementById("mk-prev"); if (!box) return; const v = k => { const el = document.querySelector('[data-pf="' + k + '"]'); return el ? el.value : ""; };
   const p = { emoji: v("emoji"), mark: v("mark"), color: v("color"), name: v("name") };
@@ -604,7 +665,8 @@ function renderBook(){
   const d = state.data, box = document.getElementById("book-main");
   document.getElementById("book-sub").textContent = d.personas.length + "人";
   const p = state.open && P(state.open);
-  if (!p) { box.innerHTML = '<div class="row" style="margin-bottom:.6rem"><button type="button" class="btn" data-new>人物を作る</button>' + (d.personas.some(x => x.core) ? "" : '<button type="button" class="btn ghost" data-core>本来の自分を作る</button>') + "</div>" + d.personas.map(x => pcardHtml(x, "data-openp")).join("") +
+  if (!p && state.bulk) { box.innerHTML = bulkHtml(); return; }
+  if (!p) { box.innerHTML = '<div class="row" style="margin-bottom:.6rem"><button type="button" class="btn" data-new>人物を作る</button>' + (d.personas.some(x => x.core) ? "" : '<button type="button" class="btn ghost" data-core>本来の自分を作る</button>') + '<button type="button" class="btn ghost" data-bulk>まとめて入れる</button></div>' + d.personas.map(x => pcardHtml(x, "data-openp")).join("") +
     (d.personas.length ? "" : '<p class="note">なりたい人物を、細かく描くほど、なりきれます。ゼロから作っても、実在の人や物語の人物をもとにしてもかまいません。</p>'); return; }
   if (state.edit) { box.innerHTML = editHtml(p); return; }
   const ivN = Object.values(p.interview || {}).filter(x => String(x || "").trim()).length, drills = d.drills.filter(x => x.personaId === p.id);
