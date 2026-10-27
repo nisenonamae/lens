@@ -200,7 +200,9 @@ nav.tabs button[aria-selected="true"]{color:var(--ink);box-shadow:inset 0 3px 0 
       <div class="f"><label for="s-every">区切りの所作と一言を出す間隔</label><select id="s-every"><option value="0">出さない</option><option value="10">10分ごと</option><option value="20">20分ごと</option><option value="30">30分ごと</option></select></div>
       <div class="f"><label for="s-inter">幕間の長さ</label><select id="s-inter"><option value="30">30秒</option><option value="60">1分</option><option value="120">2分</option></select></div>
     </div><button type="button" class="btn sm" id="save-set">保存する</button> <span class="status" id="set-status"></span>
-    <p class="note">区切りの所作と一言は、レンズを開いているあいだだけ出ます。問いかけはせず、その人の一言が数秒出て消えます。</p></div>
+    <div class="f" style="margin-top:.5rem"><label for="s-ntfy">閉じていても届く合図(ntfy のトピック名)</label><input id="s-ntfy" placeholder="例:人工反射と同じトピック、または別に作ったもの"></div>
+    <div class="row" style="margin-top:.3rem"><button type="button" class="btn ghost sm" id="s-ntfy-test">試しに送る</button> <span class="status" id="ntfy-status"></span></div>
+    <p class="note">トピックを入れると、人物に入ったときに、上の間隔ごとの「入り直す」合図を ntfy で予約します(持ち場の時間まで。なければ2時間まで)。レンズを閉じて作業していても、スマホに届きます。合図を押すと、入り直しの画面が開きます。退場すると、残りの合図は取り消します。トピックが空なら、今までどおりレンズを開いているあいだだけ、その人の一言が数秒出ます。</p></div>
     <div class="card"><h2>効果音<small>ほかのアプリと共通</small></h2><p class="note" id="se-anchor">儀式や、掛ける・外すときの音を鳴らします。</p></div>
   </section>
 </div>
@@ -331,11 +333,11 @@ const SE = (() => {
 <script>
 (function(){
 "use strict";
-const APP_VERSION = "2026-10-26 r9";
+const APP_VERSION = "2026-10-27 r10";
 const DATA = "roadmap/apps/lens/data.json";
 const K_CONS = "roadmap/apps/kenseiin/constitution.json", K_DATA = "roadmap/apps/kenseiin/data.json";
 const KEY_CONN = "lens-conn", KEY_LOCAL = "lens-local";
-const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [], reframes: [], settings: { depth: "normal", every: 20, inter: 60 } };
+const DEFAULTS = { version: 1, personas: [], active: null, logs: [], drills: [], reframes: [], settings: { depth: "normal", every: 20, inter: 60, ntfy: "" } };
 const clone = o => JSON.parse(JSON.stringify(o));
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -478,7 +480,8 @@ function renderHome(){
       '<button type="button" class="deep-btn" data-deepen title="濃くする">' + markHtml(a, 1.1) + "</button></div>" +
       "<dl>" + [["最初に問う", "think.first"], ["行動の型", "acts"], ["決してしない", "never"], ["自分への声", "voice.self"]].filter(([, k]) => get(a, k)).map(([l, k]) => "<dt>" + l + "</dt><dd>" + srcSym(a, k) + esc(get(a, k)) + "</dd>").join("") + "</dl>" +
       (d.active.situation ? '<p class="note">' + esc(d.active.situation) + (d.active.answer ? "<br>" + esc(d.active.answer) : "") + "</p>" : "") +
-      '<div class="row" style="margin-top:.6rem;justify-content:space-between"><button type="button" class="btn" data-exit>' + esc(get(a, "exit.motion") ? "退場する" : "退場する") + '</button><button type="button" class="linkbtn" data-back-in>引き戻された</button></div></div>';
+      '<div class="row" style="margin-top:.6rem;justify-content:space-between"><button type="button" class="btn" data-exit>' + esc(get(a, "exit.motion") ? "退場する" : "退場する") + '</button><span><button type="button" class="btn ghost sm" data-reenter>入り直す</button> <button type="button" class="linkbtn" data-back-in>引き戻された</button></span></div>' +
+      ((state.data.logs.find(x => x.id === d.active.logId) || {}).depths ? '<p class="note" style="margin:.4rem 0 0">濃さ:' + esc(trail(state.data.logs.find(x => x.id === d.active.logId))) + "</p>" : "") + "</div>";
   } else {
     const r = state.rinen.length ? state.rinen[new Date(taskDay()).getUTCDate() % state.rinen.length] : null;
     top.innerHTML = '<div class="bare"><div class="note" style="margin:0">土台にある理念</div>' + (r ? "<b>" + esc(r.title) + "</b><p style=\"margin:.2rem 0 0;white-space:pre-wrap\">" + esc(r.text) + "</p>" : '<p class="note">憲政院で理念を分けると、ここに出ます。</p>') + "</div>";
@@ -502,6 +505,56 @@ function showCue(p, motion, line, buttons, ms){
   if (ms) cueT = setTimeout(() => { el.hidden = true; }, ms);
 }
 function hideCue(){ clearTimeout(cueT); const el = document.getElementById("cue"); el.hidden = true; el.innerHTML = ""; }
+/* ───────── 入り直し(閉じていても届く合図)と、濃さの記録 ─────────
+   入ったら、間隔ごとの合図を ntfy で予約する。押すと「入り直す」画面(所作・問い・濃さ1〜5)。
+   濃さは、入った直後・入り直すたびに1回押すだけ。退場したら残りの合図は取り消す */
+const NTFY = "https://ntfy.sh";
+const ntfyTopic = () => String(state.data.settings.ntfy || "").trim();
+async function ntfySend(topic, body, opts){
+  const q = new URLSearchParams(); Object.entries(opts || {}).forEach(([k, v]) => { if (v != null && v !== "") q.set(k, String(v)); });
+  const r = await fetch(NTFY + "/" + encodeURIComponent(topic) + "?" + q.toString(), { method: "POST", body });
+  if (!r.ok) throw new Error("ntfy " + r.status); try { return await r.json(); } catch (e) { return {}; }
+}
+const appUrl = () => location.origin + location.pathname;
+async function scheduleCues(){
+  const d = state.data, a = d.active && P(d.active.id), topic = ntfyTopic(), ev = +d.settings.every || 0;
+  if (!a || !topic || !ev) return;
+  const duty = +get(a, "exit.duty") || 0, span = duty ? duty + (d.active.extend || 0) : 120, n = Math.max(1, Math.min(9, Math.floor(span / ev)));
+  const t0 = d.active.at, logId = d.active.logId, cues = [];
+  for (let k = 1; k <= n; k++) {
+    const line = pick(lines(get(a, "bound.lines"))) || get(a, "voice.catch") || "";
+    try { const j = await ntfySend(topic, "今、" + a.name + "なら、どうする?" + (line ? "\n" + line : ""), { delay: ev * k + "m", title: markText(a) + " " + a.name + " — 入り直す", priority: 4, tags: "repeat", click: appUrl() + "#reentry" });
+      const id = j.sequence_id || j.id; if (id) cues.push({ id, at: t0 + ev * k * 60000 }); }
+    catch (e) { toast("合図を予約できませんでした(ネットかトピック名を確かめてください)"); break; }
+  }
+  if (cues.length) await commitQuiet(dd => { if (!dd.active || dd.active.logId !== logId) return false; dd.active.cues = cues; });
+}
+async function cancelCues(cues){
+  const topic = ntfyTopic(); if (!topic || !cues || !cues.length) return;
+  for (const c of cues) { if (c.at && c.at <= now()) continue; try { await fetch(NTFY + "/" + encodeURIComponent(topic) + "/" + encodeURIComponent(c.id), { method: "DELETE" }); } catch (e) {} }
+}
+const rateBtns = (kind, skip) => [1, 2, 3, 4, 5].map(n => '<button type="button" class="btn sm' + (n < 5 ? " ghost" : "") + '" data-dp="' + kind + ":" + n + '">' + n + "</button>").join("") + (skip ? '<button type="button" class="linkbtn" data-dp-skip>あとで</button>' : "");
+function askInDepth(){
+  const a = state.data.active && P(state.data.active.id); if (!a) return;
+  showCue(a, null, "入った直後の濃さは?(1 うすい 〜 5 なりきっている)", rateBtns("in", true), 0);
+}
+function reentry(){
+  const a = state.data.active && P(state.data.active.id); if (!a) return;
+  const m = pick(lines(get(a, "bound.motions"))), l = pick(lines(get(a, "bound.lines"))) || get(a, "voice.catch");
+  state.lastCue = now();
+  showCue(a, m, "今、" + a.name + "なら、どうする?" + (l ? "\n" + l : ""), '<div class="note" style="width:100%;margin:.2rem 0">入り直したら、今の濃さを押す</div>' + rateBtns("re", false), 0); se("pluck");
+}
+async function recordDepth(kind, v){
+  hideCue(); state.lastCue = now();
+  await commitQuiet(d => { const l = d.active && d.logs.find(x => x.id === d.active.logId); if (!l) return false; l.depths = (l.depths || []).concat([{ t: now(), k: kind, v }]); });
+  toast(kind === "in" ? "入った。" : "入り直した。"); renderAll();
+}
+function checkReentryHash(){
+  if (location.hash !== "#reentry") return;
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  if (state.data.active) { showView("home"); reentry(); }
+}
+const trail = l => (l.depths || []).map(x => (x.k === "in" ? "入" : "") + x.v).join("→");
 function boundCue(){
   const a = state.data.active && P(state.data.active.id); if (!a) return;
   const m = pick(lines(get(a, "bound.motions"))), l = pick(lines(get(a, "bound.lines"))) || get(a, "voice.catch");
@@ -523,7 +576,7 @@ function exitSign(){
 function watch(){
   const d = state.data, a = d.active && P(d.active.id); if (!a || state.rite || document.hidden) return;
   const ev = +d.settings.every || 0;
-  if (ev && now() - (state.lastCue || d.active.at) >= ev * 60000) boundCue();
+  if (ev && !ntfyTopic() && now() - (state.lastCue || d.active.at) >= ev * 60000) boundCue();
   const duty = +get(a, "exit.duty") || 0, due = d.active.at + (duty + (d.active.extend || 0)) * 60000;
   if (duty && now() >= due && !state.signShown) { state.signShown = true; exitSign(); }
 }
@@ -723,19 +776,20 @@ function pickSituation(){
 function renderLog(){
   const d = state.data, box = document.getElementById("log-main");
   const stats = d.personas.map(p => { const ls = d.logs.filter(l => l.personaId === p.id), dp = ls.filter(l => l.depth);
-    return { p, n: ls.length, avg: dp.length ? dp.reduce((s, l) => s + l.depth, 0) / dp.length : null, time: ls.reduce((s, l) => s + Math.max(0, (l.to || 0) - l.from), 0) }; }).sort((a, b) => b.n - a.n);
+    const ins = ls.map(l => (l.depths || []).find(x => x.k === "in")).filter(Boolean).map(x => x.v), res = ls.flatMap(l => (l.depths || []).filter(x => x.k === "re").map(x => x.v)), mean = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length * 10) / 10 : null;
+    return { p, n: ls.length, avg: dp.length ? dp.reduce((s, l) => s + l.depth, 0) / dp.length : null, time: ls.reduce((s, l) => s + Math.max(0, (l.to || 0) - l.from), 0), inAvg: mean(ins), reAvg: mean(res), reN: res.length }; }).sort((a, b) => b.n - a.n);
   const later = d.logs.filter(l => l.to && !l.depth && !l.reviewed).slice(-10).reverse(), lp = state.laterPick || {};
   box.innerHTML = (later.length ? '<div class="card later"><h2>あとでふりかえる<small>' + later.length + "件</small></h2><p class=\"note\">なりきっているあいだと退場のときは聞かずに、ここでまとめてふりかえります。</p>" +
       later.map(l => { const p = P(l.personaId); return '<div class="qa" style="' + pc(p) + '"><div class="q">' + md(taskDay(l.from)) + " " + hm(l.from) + "〜" + hm(l.to) + "・" + esc(p ? p.name : "") + (l.slips ? "・引き戻された " + l.slips + "回" : "") + (l.deepens ? "・濃くした " + l.deepens + "回" : "") + "</div>" +
         (l.diary ? '<div class="a">日誌:' + esc(l.diary) + "</div>" : "") + '<div class="note">どれだけなりきれた?</div><div class="rate">' + [1, 2, 3, 4, 5].map(n => '<button type="button" data-later-depth="' + esc(l.id) + ":" + n + '" aria-pressed="' + (lp[l.id] === n) + '">' + n + "</button>").join("") + "</div>" +
         '<div class="f"><input id="lt-slip-' + esc(l.id) + '" placeholder="どこで素に戻った?(なくてもいい)"></div><button type="button" class="btn sm" data-later-save="' + esc(l.id) + '">残す</button></div>'; }).join("") + "</div>" : "") +
-    '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + markHtml(s.p, 1.35) + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + "</div></div>" +
+    '<div class="card"><h2>人物ごと</h2>' + (stats.map(s => '<div class="pcard" style="' + pc(s.p) + '"><span class="em">' + markHtml(s.p, 1.35) + '</span><div><div class="pn">' + esc(s.p.name) + '</div><div class="ps">' + s.n + "回・" + dur(s.time) + (s.inAvg != null ? "・入った直後 " + s.inAvg : "") + (s.reAvg != null ? "・入り直し " + s.reAvg + "(" + s.reN + "回)" : "") + "</div></div>" +
       '<div class="pm">' + (s.avg != null ? "なりきり " + (Math.round(s.avg * 10) / 10) + '/5<br><span class="bar"><i style="width:' + Math.round(s.avg / 5 * 100) + '%"></i></span>' : "まだ") + "</div></div>").join("") || '<p class="note">まだありません。</p>') + "</div>" +
     '<div class="card"><h2>これまで</h2><ul class="log">' + (d.logs.slice(-30).reverse().map(l => { const p = P(l.personaId);
-      return '<li><span class="t">' + md(taskDay(l.from)) + " " + hm(l.from) + (l.to ? "〜" + hm(l.to) : "") + "</span> " + esc(p ? markText(p) + " " + p.name : "(消した人物)") + (l.depth ? "・なりきり " + l.depth + "/5" : "") +
+      return '<li><span class="t">' + md(taskDay(l.from)) + " " + hm(l.from) + (l.to ? "〜" + hm(l.to) : "") + "</span> " + esc(p ? markText(p) + " " + p.name : "(消した人物)") + (l.depth ? "・なりきり " + l.depth + "/5" : "") + (l.depths && l.depths.length ? '<br><small>濃さの流れ:' + esc(trail(l)) + "</small>" : "") +
         (l.situation ? '<br><small>状況:' + esc(l.situation) + "</small>" : "") + (l.diary ? '<br><small>日誌:' + esc(l.diary) + "</small>" : "") + (l.slip ? '<br><small>素に戻ったところ:' + esc(l.slip) + "</small>" : "") + (l.seen ? '<br><small>見えたこと・やったこと:' + esc(l.seen) + "</small>" : "") + "</li>"; }).join("") || '<li class="note">まだありません。</li>') + "</ul></div>";
 }
-function renderSet(){ const st = state.data.settings, set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = String(v); }; set("s-depth", st.depth); set("s-every", st.every); set("s-inter", st.inter); }
+function renderSet(){ const st = state.data.settings, set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = String(v); }; set("s-depth", st.depth); set("s-every", st.every); set("s-inter", st.inter); set("s-ntfy", st.ntfy || ""); }
 /* ───────── 塗り替え:タスクなどへのマイナスのイメージを、本当にある良い面へ塗り替える ─────────
    札:対象・今のイメージ・新しいイメージ・合言葉。
    やってみたあとは、マイナスを選ばせない。どちらを選んでも前に進む:
@@ -846,20 +900,24 @@ function bind(){
     if (q("[data-stay]")) { hideCue(); state.signShown = false; await commitQuiet(d => { if (d.active) d.active.extend = (d.active.extend || 0) + 15; }); return; }
     if (q("[data-deepen]")) return deepen();
     if (q("[data-back-in]")) return startBack();
+    if ((b = q("[data-dp]"))) { const [k, v] = b.dataset.dp.split(":"); return recordDepth(k, +v); }
+    if (q("[data-dp-skip]")) { hideCue(); return; }
+    if (q("[data-reenter]")) return reentry();
     if (q("[data-rt-x]")) { state.rite = null; renderRite(); return; }
     if (q("[data-rt-back]")) { readRite(); state.rite.step--; renderRite(); return; }
     if (q("[data-rt-next]")) { readRite(); const r = state.rite, name = r.steps[r.step];
-      if (r.kind === "off" && name === "日誌") { const t = now(), diary = r.diary.trim();
+      if (r.kind === "off" && name === "日誌") { const t = now(), diary = r.diary.trim(); cancelCues((state.data.active || {}).cues);
         await commitQuiet(d => { if (!d.active) return false; const l = d.logs.find(x => x.id === d.active.logId); if (l) Object.assign(l, { to: t, diary }); r.put = (l && l.put) || ""; d.active = null; }); renderHome(); }
       r.step++; se("tap"); renderRite(); return; }
     if ((b = q("[data-rt-next-p]"))) return startRite(b.dataset.rtNextP);
     if (q("[data-rt-end]")) { state.rite = null; renderRite(); renderAll(); return; }
-    if (q("[data-rt-on]")) { readRite(); const r = state.rite, t = now(), lid = "l" + uid(), ans = Object.assign({}, r.ans);
+    if (q("[data-rt-on]")) { readRite(); const r = state.rite, t = now(), lid = "l" + uid(), ans = Object.assign({}, r.ans), oldCues = (state.data.active || {}).cues;
       await commit(d => { if (d.active) { const l = d.logs.find(x => x.id === d.active.logId); if (l && !l.to) l.to = t; }
         d.logs.push({ id: lid, personaId: r.id, from: t, situation: r.situation.trim(), answer: r.answer.trim(), put: r.put.trim() });
         d.active = { id: r.id, at: t, situation: r.situation.trim(), answer: r.answer.trim(), logId: lid };
         const p = d.personas.find(x => x.id === r.id); if (p) { p.interview = p.interview || {}; Object.keys(ans).forEach(k => { if (String(ans[k] || "").trim()) p.interview[k] = ans[k].trim(); }); } });
-      state.rite = null; state.lastCue = t; state.signShown = false; renderRite(); se("fanfare"); return; }
+      state.rite = null; state.lastCue = t; state.signShown = false; renderRite(); se("fanfare");
+      cancelCues(oldCues); askInDepth(); scheduleCues(); return; }
     if (q("[data-rt-backdone]")) { state.rite = null; renderRite(); await commitQuiet(d => { const l = d.logs.find(x => x.id === (d.active || {}).logId); if (l) l.slips = (l.slips || 0) + 1; }); state.lastCue = now(); return; }
     // あとからのふりかえり
     if ((b = q("[data-later-depth]"))) { const [id, n] = b.dataset.laterDepth.split(":"); state.laterPick = state.laterPick || {}; state.laterPick[id] = +n; renderLog(); return; }
@@ -885,6 +943,7 @@ function bind(){
       await commit(d => { const p = d.personas.find(x => x.id === id); if (!p) return false; Object.keys(v).forEach(k => set(p, k, v[k])); p.roots = roots; p.src = src; });
       state.edit = false; renderBook(); se("save"); toast("保存しました"); return; }
     if ((b = q("[data-delp]"))) { if (!confirm("この人物を消しますか(記録は残ります)。")) return; const id = b.dataset.delp;
+      if (state.data.active && state.data.active.id === id) cancelCues(state.data.active.cues);
       await commit(d => { d.personas = d.personas.filter(x => x.id !== id); if (d.active && d.active.id === id) d.active = null; }); state.open = null; renderBook(); return; }
     if ((b = q("[data-iv-save]"))) { const i = +b.dataset.ivSave, a = (document.getElementById("iv-in") || {}).value || "", id = state.open;
       if (!a.trim()) { toast("この人物として答えてください"); return; }
@@ -902,8 +961,13 @@ function bind(){
       state.drill = { personaId: dr.personaId, situation: pickSituation(), fit: 0 }; renderDrill(); se("save"); toast("問答集に残しました"); return; }
   });
   document.body.addEventListener("change", e => { if (e.target.id === "dr-p") { state.drill.personaId = e.target.value; renderDrill(); } });
+  document.getElementById("s-ntfy-test").addEventListener("click", async () => { const t = document.getElementById("s-ntfy").value.trim().replace(/^https?:\/\/ntfy\.sh\//, ""), st = document.getElementById("ntfy-status");
+    if (!t) { st.textContent = "トピック名を入れてください"; return; }
+    try { await ntfySend(t, "今、この人物なら、どうする?", { title: "レンズ — 入り直す(試し)", priority: 4, tags: "repeat", click: appUrl() + "#reentry" }); st.textContent = "送りました。スマホに届いたか確かめてください"; } catch (e) { st.textContent = "送れませんでした(" + e.message + ")"; } });
+  window.addEventListener("hashchange", checkReentryHash);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkReentryHash(); });
   document.getElementById("save-set").addEventListener("click", async () => { const v = id => document.getElementById(id).value;
-    const st = { depth: v("s-depth"), every: +v("s-every"), inter: +v("s-inter") }; await commit(d => { d.settings = Object.assign({}, d.settings, st); }); document.getElementById("set-status").textContent = "保存しました"; });
+    const st = { depth: v("s-depth"), every: +v("s-every"), inter: +v("s-inter"), ntfy: v("s-ntfy").trim().replace(/^https?:\/\/ntfy\.sh\//, "") }; await commit(d => { d.settings = Object.assign({}, d.settings, st); }); document.getElementById("set-status").textContent = "保存しました"; });
   document.getElementById("connect").addEventListener("click", async () => {
     const v = id => document.getElementById(id).value.trim(), c = { owner: v("c-owner"), repo: v("c-repo") || "notion-daily", branch: v("c-branch") || "main", token: v("c-token") };
     if (!c.owner || !c.token) { const st = document.getElementById("conn-status"); st.classList.add("err"); st.textContent = "ユーザー名とトークンを入れてください。"; return; }
@@ -920,6 +984,7 @@ function boot(){
   bind(); renderAll();
   try { SE.init([["[data-rt-on], [data-become], [data-rt-next], [data-dr-save], [data-edit-save], [data-rt-backdone]", null], ["[data-later-depth], [data-fit]", "pluck"], ["[data-delp]", "remove"], ["nav.tabs button", "tab"]]); SE.mount(document.getElementById("se-anchor")); } catch (e) {}
   if (c && c.token) { state.conn = c; loadAll(); }
+  setTimeout(checkReentryHash, 400);
   setInterval(watch, 15000);
   // 幕間のあとに入る人物が決まっていれば、数え終わったらそのまま入る
   setInterval(() => { const r = state.rite; if (r && r.kind === "off" && r.steps[r.step] === "幕間" && r.nextId && r.interEnd && now() >= r.interEnd) startRite(r.nextId); }, 500);
